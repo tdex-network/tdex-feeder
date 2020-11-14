@@ -1,0 +1,19 @@
+{
+  "daemon_endpoint": "localhost:9000",
+  "daemon_macaroon": "string",
+  "kraken_ws_endpoint": "ws.kraken.com",
+  "markets": [
+    {
+      "base_asset": "lbtc",
+      "quote_asset":"usd",
+      "kraken_ticker": "XBT/USD",
+      "interval": 10
+    },
+    {
+      "base_asset": "lbtc",
+      "quote_asset":"eur",
+      "kraken_ticker": "XBT/EUR",
+      "interval": 10
+    } 
+  ]
+}
