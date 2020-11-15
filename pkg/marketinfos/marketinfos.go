@@ -1,12 +1,10 @@
-package markets
+package marketinfos
 
 import (
 	"time"
 
 	"github.com/tdex-network/tdex-feeder/config"
 )
-
-type MarketsInformations []*MarketInfo
 
 type MarketInfo struct {
 	config   config.Market

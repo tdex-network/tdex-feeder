@@ -2,9 +2,12 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"log"
 	"os"
+	"reflect"
+	"strings"
 )
 
 const (
@@ -17,17 +20,17 @@ const (
 )
 
 type Config struct {
-	Daemon_endpoint    string   `json:"daemon_endpoint"`
+	Daemon_endpoint    string   `json:"daemon_endpoint,required"`
 	Daemon_macaroon    string   `json:"daemon_macaroon"`
-	Kraken_ws_endpoint string   `json:"kraken_ws_endpoint"`
-	Markets            []Market `json:"markets"`
+	Kraken_ws_endpoint string   `json:"kraken_ws_endpoint,required"`
+	Markets            []Market `json:"markets,required"`
 }
 
 type Market struct {
-	Base_asset    string `json:"base_asset"`
-	Quote_asset   string `json:"quote_asset"`
-	Kraken_ticker string `json:"kraken_ticker"`
-	Interval      int    `json:"interval"`
+	Base_asset    string `json:"base_asset,required"`
+	Quote_asset   string `json:"quote_asset,required"`
+	Kraken_ticker string `json:"kraken_ticker,required"`
+	Interval      int    `json:"interval,required"`
 }
 
 func DefaultConfig() Config {
@@ -56,10 +59,34 @@ func LoadConfigFromFile(filePath string) Config {
 
 	var config Config
 
-	byteValue, _ := ioutil.ReadAll(jsonFile)
+	byteValue, err := ioutil.ReadAll(jsonFile)
+	if err != nil {
+		log.Println(err)
+	}
 	json.Unmarshal(byteValue, &config)
 
+	checkConfigParsing(config)
+
 	return config
+}
+
+func checkConfigParsing(config Config) {
+	fields := reflect.ValueOf(config)
+	for i := 0; i < fields.NumField(); i++ {
+		tags := fields.Type().Field(i).Tag
+		if strings.Contains(string(tags), "required") && fields.Field(i).IsZero() {
+			log.Println(errors.New("Config required field is missing: " + string(tags)))
+		}
+	}
+	for _, market := range config.Markets {
+		fields := reflect.ValueOf(market)
+		for i := 0; i < fields.NumField(); i++ {
+			tags := fields.Type().Field(i).Tag
+			if strings.Contains(string(tags), "required") && fields.Field(i).IsZero() {
+				log.Println(errors.New("Config required field is missing: " + string(tags)))
+			}
+		}
+	}
 }
 
 func LoadConfig(filePath string) Config {

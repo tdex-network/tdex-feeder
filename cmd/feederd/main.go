@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/tdex-network/tdex-feeder/config"
 	"github.com/tdex-network/tdex-feeder/pkg/conn"
+	"github.com/tdex-network/tdex-feeder/pkg/marketinfos"
 
 	pboperator "github.com/tdex-network/tdex-protobuf/generated/go/operator"
 )
@@ -36,14 +37,18 @@ func main() {
 	defer conngRPC.Close()
 	clientgRPC := pboperator.NewOperatorClient(conngRPC)
 
-	done := make(chan string)
-
-	go conn.GetMessages(done, cSocket, clientgRPC, conf.Markets)
-
-	for _, market := range conf.Markets {
-		m := conn.CreateSubscribeToMarketMessage(market.Kraken_ticker)
+	numberOfMarkets := len(conf.Markets)
+	marketsInfos := make([]*marketinfos.MarketInfo, numberOfMarkets)
+	for i, marketConfig := range conf.Markets {
+		marketsInfos[i] = marketinfos.DefaultMarketInfo(marketConfig)
+		defer marketsInfos[i].GetInterval().Stop()
+		m := conn.CreateSubscribeToMarketMessage(marketConfig.Kraken_ticker)
 		conn.SendRequestMessage(cSocket, m)
 	}
+
+	done := make(chan string)
+	go conn.GetMessages(done, cSocket, marketsInfos)
+	go conn.UpdateMarketPricegRPC(marketsInfos, clientgRPC)
 
 	for {
 		select {

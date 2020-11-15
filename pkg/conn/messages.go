@@ -7,9 +7,7 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	"github.com/tdex-network/tdex-feeder/config"
-	"github.com/tdex-network/tdex-feeder/pkg/markets"
-	pboperator "github.com/tdex-network/tdex-protobuf/generated/go/operator"
+	"github.com/tdex-network/tdex-feeder/pkg/marketinfos"
 )
 
 type RequestMessage struct {
@@ -52,29 +50,21 @@ func SendRequestMessage(c *websocket.Conn, m RequestMessage) {
 }
 
 // GetMessages keeps a loop that gets the messages from the remote host
-// and calls a function to handle the received messages when necessary.
-func GetMessages(done chan string, cSocket *websocket.Conn, clientgRPC pboperator.OperatorClient, marketsConfigs []config.Market) {
+// and calls a function to handle the received messages.
+func GetMessages(done chan string, cSocket *websocket.Conn, marketsInfos []*marketinfos.MarketInfo) {
 	defer close(done)
-	numberOfMarkets := len(marketsConfigs)
-	marketsInfos := make(markets.MarketsInformations, numberOfMarkets)
-
-	for i, marketConfig := range marketsConfigs {
-		marketsInfos[i] = markets.DefaultMarketInfo(marketConfig)
-		defer marketsInfos[i].GetInterval().Stop()
-	}
-
 	for {
 		_, message, err := cSocket.ReadMessage()
 		if err != nil {
 			log.Println("read:", err)
 			return
 		}
-		//log.Println(string(message))
-		handleMessages(message, marketsInfos, clientgRPC)
+		log.Println(string(message))
+		handleMessages(message, marketsInfos)
 	}
 }
 
-func handleMessages(message []byte, marketsInfos markets.MarketsInformations, clientgRPC pboperator.OperatorClient) {
+func handleMessages(message []byte, marketsInfos []*marketinfos.MarketInfo) {
 	var result []interface{}
 	json.Unmarshal([]byte(message), &result)
 	if len(result) == 4 {
@@ -88,6 +78,5 @@ func handleMessages(message []byte, marketsInfos markets.MarketsInformations, cl
 				}
 			}
 		}
-		go UpdateMarketPricegRPC(marketsInfos, clientgRPC)
 	}
 }
