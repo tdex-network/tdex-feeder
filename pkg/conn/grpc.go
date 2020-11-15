@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/tdex-network/tdex-feeder/pkg/markets"
 	pboperator "github.com/tdex-network/tdex-protobuf/generated/go/operator"
 	pbtypes "github.com/tdex-network/tdex-protobuf/generated/go/types"
 	"google.golang.org/grpc"
@@ -19,20 +20,20 @@ func ConnectTogRPC(daemon_endpoint string) *grpc.ClientConn {
 	return conn
 }
 
-func UpdateMarketPricegRPC(marketsInfos marketsInformations, clientgRPC pboperator.OperatorClient) {
+func UpdateMarketPricegRPC(marketsInfos markets.MarketsInformations, clientgRPC pboperator.OperatorClient) {
 	for _, marketsInfo := range marketsInfos {
 		select {
-		case <-marketsInfo.interval.C:
-			if marketsInfo.price == 0.00 {
+		case <-marketsInfo.GetInterval().C:
+			if marketsInfo.GetPrice() == 0.00 {
 				log.Println("Can't send gRPC request with no price")
 			} else {
-				log.Println("Sending gRPC request:", marketsInfo.config.Kraken_ticker, marketsInfo.price)
+				log.Println("Sending gRPC request:", marketsInfo.GetConfig().Kraken_ticker, marketsInfo.GetPrice())
 				// Contact the server and print out its response.
 				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 				defer cancel()
 				r, err := clientgRPC.UpdateMarketPrice(ctx, &pboperator.UpdateMarketPriceRequest{
-					Market: &pbtypes.Market{BaseAsset: marketsInfo.config.Base_asset, QuoteAsset: marketsInfo.config.Quote_asset},
-					Price:  &pbtypes.Price{BasePrice: 1 / float32(marketsInfo.price), QuotePrice: float32(marketsInfo.price)}})
+					Market: &pbtypes.Market{BaseAsset: marketsInfo.GetConfig().Base_asset, QuoteAsset: marketsInfo.GetConfig().Quote_asset},
+					Price:  &pbtypes.Price{BasePrice: 1 / float32(marketsInfo.GetPrice()), QuotePrice: float32(marketsInfo.GetPrice())}})
 				if err != nil {
 					log.Println(err)
 				}

@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"log"
 	"strconv"
-	"time"
 
 	"github.com/gorilla/websocket"
 
 	"github.com/tdex-network/tdex-feeder/config"
+	"github.com/tdex-network/tdex-feeder/pkg/markets"
 	pboperator "github.com/tdex-network/tdex-protobuf/generated/go/operator"
 )
 
@@ -51,32 +51,16 @@ func SendRequestMessage(c *websocket.Conn, m RequestMessage) {
 	}
 }
 
-type marketsInformations []*marketInfo
-
-type marketInfo struct {
-	config   config.Market
-	price    float64
-	interval *time.Ticker
-}
-
-func defaultMarketInfo(market config.Market) *marketInfo {
-	var marketInfo marketInfo
-	marketInfo.config = market
-	marketInfo.price = 0.00
-	marketInfo.interval = time.NewTicker(time.Second * time.Duration(market.Interval))
-	return &marketInfo
-}
-
 // GetMessages keeps a loop that gets the messages from the remote host
 // and calls a function to handle the received messages when necessary.
-func GetMessages(done chan string, cSocket *websocket.Conn, clientgRPC pboperator.OperatorClient, markets []config.Market) {
+func GetMessages(done chan string, cSocket *websocket.Conn, clientgRPC pboperator.OperatorClient, marketsConfigs []config.Market) {
 	defer close(done)
-	numberOfMarkets := len(markets)
-	marketsInfos := make(marketsInformations, numberOfMarkets)
+	numberOfMarkets := len(marketsConfigs)
+	marketsInfos := make(markets.MarketsInformations, numberOfMarkets)
 
-	for i, market := range markets {
-		marketsInfos[i] = defaultMarketInfo(market)
-		defer marketsInfos[i].interval.Stop()
+	for i, marketConfig := range marketsConfigs {
+		marketsInfos[i] = markets.DefaultMarketInfo(marketConfig)
+		defer marketsInfos[i].GetInterval().Stop()
 	}
 
 	for {
@@ -90,7 +74,7 @@ func GetMessages(done chan string, cSocket *websocket.Conn, clientgRPC pboperato
 	}
 }
 
-func handleMessages(message []byte, marketsInfos marketsInformations, clientgRPC pboperator.OperatorClient) {
+func handleMessages(message []byte, marketsInfos markets.MarketsInformations, clientgRPC pboperator.OperatorClient) {
 	var result []interface{}
 	json.Unmarshal([]byte(message), &result)
 	if len(result) == 4 {
@@ -99,9 +83,8 @@ func handleMessages(message []byte, marketsInfos marketsInformations, clientgRPC
 		price, err := strconv.ParseFloat(priceAsk[0].(string), 64)
 		if err == nil {
 			for i, marketsInfo := range marketsInfos {
-				if marketsInfo.config.Kraken_ticker == result[3] {
-					marketsInfo.price = price
-					marketsInfos[i] = marketsInfo
+				if marketsInfo.GetConfig().Kraken_ticker == result[3] {
+					marketsInfos[i].SetPrice(price)
 				}
 			}
 		}
