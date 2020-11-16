@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/tdex-network/tdex-feeder/pkg/marketinfos"
+	"github.com/tdex-network/tdex-feeder/pkg/marketinfo"
 	pboperator "github.com/tdex-network/tdex-protobuf/generated/go/operator"
 	pbtypes "github.com/tdex-network/tdex-protobuf/generated/go/types"
 	"google.golang.org/grpc"
@@ -15,12 +15,12 @@ import (
 func ConnectTogRPC(daemon_endpoint string) *grpc.ClientConn {
 	conn, err := grpc.Dial(daemon_endpoint, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
-		log.Fatalf("did not connect: %v", err)
+		log.Fatalf("Could not connect: %v", err)
 	}
 	return conn
 }
 
-func UpdateMarketPricegRPC(marketsInfos []*marketinfos.MarketInfo, clientgRPC pboperator.OperatorClient) {
+func UpdateMarketPricegRPC(marketsInfos []*marketinfo.MarketInfo, clientgRPC pboperator.OperatorClient) {
 	for {
 		for _, marketsInfo := range marketsInfos {
 			select {

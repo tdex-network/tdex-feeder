@@ -1,4 +1,4 @@
-package marketinfos
+package marketinfo
 
 import (
 	"time"

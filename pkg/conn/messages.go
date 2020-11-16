@@ -7,7 +7,7 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	"github.com/tdex-network/tdex-feeder/pkg/marketinfos"
+	"github.com/tdex-network/tdex-feeder/pkg/marketinfo"
 )
 
 type RequestMessage struct {
@@ -51,7 +51,7 @@ func SendRequestMessage(c *websocket.Conn, m RequestMessage) {
 
 // GetMessages keeps a loop that gets the messages from the remote host
 // and calls a function to handle the received messages.
-func GetMessages(done chan string, cSocket *websocket.Conn, marketsInfos []*marketinfos.MarketInfo) {
+func GetMessages(done chan string, cSocket *websocket.Conn, marketsInfos []*marketinfo.MarketInfo) {
 	defer close(done)
 	for {
 		_, message, err := cSocket.ReadMessage()
@@ -64,7 +64,7 @@ func GetMessages(done chan string, cSocket *websocket.Conn, marketsInfos []*mark
 	}
 }
 
-func handleMessages(message []byte, marketsInfos []*marketinfos.MarketInfo) {
+func handleMessages(message []byte, marketsInfos []*marketinfo.MarketInfo) {
 	var result []interface{}
 	json.Unmarshal([]byte(message), &result)
 	if len(result) == 4 {
