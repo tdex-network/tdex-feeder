@@ -6,12 +6,16 @@ import (
 	"github.com/tdex-network/tdex-feeder/config"
 )
 
+// MarketInfo stores the informations necessary for
+// handling different market pair prices in real-time.
 type MarketInfo struct {
 	config   config.Market
 	price    float64
 	interval *time.Ticker
 }
 
+// DefaultMarketInfo returns a pointer to a MarketInfo struct
+// with the default configurations.
 func DefaultMarketInfo(market config.Market) *MarketInfo {
 	var marketInfo MarketInfo
 	marketInfo.SetConfig(market)

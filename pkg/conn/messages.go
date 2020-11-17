@@ -10,6 +10,8 @@ import (
 	"github.com/tdex-network/tdex-feeder/pkg/marketinfo"
 )
 
+// RequestMessage is the data structure used to create
+// jsons in order subscribe to market updates on Kraken
 type RequestMessage struct {
 	Event        string        `json:"event"`
 	Pair         []string      `json:"pair,omitempty"`
@@ -25,17 +27,21 @@ type Subscription struct {
 	Snapshop bool   `json:"snapshot,omitempty"`
 }
 
+// CreatePingMessage returns a RequestMessage struct
+// with a ping Event.
 func CreatePingMessage() RequestMessage {
-	m := RequestMessage{Event: "ping"}
-	return m
+	return RequestMessage{Event: "ping"}
 }
 
-func CreateSubscribeToMarketMessage(market string) RequestMessage {
+// CreateSubscribeToMarketMessage gets a string with a market pair and returns
+// a RequestMessage struct with instructions to subscrive to that market pair ticker.
+func CreateSubscribeToMarketMessage(marketpair string) RequestMessage {
 	s := Subscription{Name: "ticker"}
-	m := RequestMessage{"subscribe", []string{market}, &s, 0}
-	return m
+	return RequestMessage{"subscribe", []string{marketpair}, &s, 0}
 }
 
+// SendRequestMessage gets a socket connection and a RequestMessage struct,
+// marshalls the struct and sends the message using the socket.
 func SendRequestMessage(c *websocket.Conn, m RequestMessage) {
 	b, err := json.Marshal(m)
 	if err != nil {
@@ -49,8 +55,8 @@ func SendRequestMessage(c *websocket.Conn, m RequestMessage) {
 	}
 }
 
-// GetMessages keeps a loop that gets the messages from the remote host
-// and calls a function to handle the received messages.
+// GetMessages keeps a loop that gets the data from the remote host
+// and calls a function to handle the received json.
 func GetMessages(done chan string, cSocket *websocket.Conn, marketsInfos []*marketinfo.MarketInfo) {
 	defer close(done)
 	for {
@@ -64,6 +70,9 @@ func GetMessages(done chan string, cSocket *websocket.Conn, marketsInfos []*mark
 	}
 }
 
+// handleMessages gets a json with a market pair updated price and
+// a list of marketInfo structs and sets the price for that market pair
+// on the respective struct.
 func handleMessages(message []byte, marketsInfos []*marketinfo.MarketInfo) {
 	var result []interface{}
 	json.Unmarshal([]byte(message), &result)
