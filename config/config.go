@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
-	"log"
 	"os"
 	"reflect"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -35,7 +36,7 @@ type Market struct {
 
 // DefaultConfig returns the datastructure needed
 // for a default connection.
-func DefaultConfig() Config {
+func defaultConfig() Config {
 	return Config{
 		Daemon_endpoint:    defaultDaemon_endpoint,
 		Kraken_ws_endpoint: defaultKraken_ws_endpoint,
@@ -52,10 +53,10 @@ func DefaultConfig() Config {
 
 // LoadConfigFromFile reads a file with the intended running behaviour
 // and returns a Config struct with the respective configurations.
-func LoadConfigFromFile(filePath string) Config {
+func loadConfigFromFile(filePath string) Config {
 	jsonFile, err := os.Open(filePath)
 	if err != nil {
-		log.Println(err)
+		log.Fatal(err)
 	}
 	defer jsonFile.Close()
 
@@ -63,23 +64,26 @@ func LoadConfigFromFile(filePath string) Config {
 
 	byteValue, err := ioutil.ReadAll(jsonFile)
 	if err != nil {
-		log.Println(err)
+		log.Fatal(err)
 	}
 	json.Unmarshal(byteValue, &config)
 
-	checkConfigParsing(config)
+	err = checkConfigParsing(config)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	return config
 }
 
 // checkConfigParsing checks if all the required fields
 // were correctly loaded into the Config struct.
-func checkConfigParsing(config Config) {
+func checkConfigParsing(config Config) error {
 	fields := reflect.ValueOf(config)
 	for i := 0; i < fields.NumField(); i++ {
 		tags := fields.Type().Field(i).Tag
 		if strings.Contains(string(tags), "required") && fields.Field(i).IsZero() {
-			log.Println(errors.New("Config required field is missing: " + string(tags)))
+			return errors.New("Config required field is missing: " + string(tags))
 		}
 	}
 	for _, market := range config.Markets {
@@ -87,10 +91,11 @@ func checkConfigParsing(config Config) {
 		for i := 0; i < fields.NumField(); i++ {
 			tags := fields.Type().Field(i).Tag
 			if strings.Contains(string(tags), "required") && fields.Field(i).IsZero() {
-				log.Println(errors.New("Config required field is missing: " + string(tags)))
+				return errors.New("Config required field is missing: " + string(tags))
 			}
 		}
 	}
+	return nil
 }
 
 // LoadConfig handles the default behaviour for loading
@@ -100,7 +105,7 @@ func LoadConfig(filePath string) Config {
 	_, err := os.Stat(filePath)
 	if os.IsNotExist(err) {
 		log.Println("File not found. Loading default config.")
-		return DefaultConfig()
+		return defaultConfig()
 	}
-	return LoadConfigFromFile(filePath)
+	return loadConfigFromFile(filePath)
 }

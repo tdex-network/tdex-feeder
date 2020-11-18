@@ -2,8 +2,9 @@ package conn
 
 import (
 	"context"
-	"log"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/tdex-network/tdex-feeder/pkg/marketinfo"
 	pboperator "github.com/tdex-network/tdex-protobuf/generated/go/operator"
@@ -15,7 +16,7 @@ import (
 func ConnectTogRPC(daemon_endpoint string) *grpc.ClientConn {
 	conn, err := grpc.Dial(daemon_endpoint, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
-		log.Fatalf("Could not connect: %v", err)
+		log.Fatalf("Could not connect to gRPC: %v", err)
 	}
 	return conn
 }
@@ -29,7 +30,6 @@ func UpdateMarketPricegRPC(marketsInfos []*marketinfo.MarketInfo, clientgRPC pbo
 					log.Println("Can't send gRPC request with no price")
 				} else {
 					log.Println("Sending gRPC request:", marketsInfo.GetConfig().Kraken_ticker, marketsInfo.GetPrice())
-					// Contact the server and print out its response.
 					ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 					defer cancel()
 					r, err := clientgRPC.UpdateMarketPrice(ctx, &pboperator.UpdateMarketPriceRequest{
@@ -37,8 +37,9 @@ func UpdateMarketPricegRPC(marketsInfos []*marketinfo.MarketInfo, clientgRPC pbo
 						Price:  &pbtypes.Price{BasePrice: 1 / float32(marketsInfo.GetPrice()), QuotePrice: float32(marketsInfo.GetPrice())}})
 					if err != nil {
 						log.Println(err)
+					} else {
+						log.Println(r)
 					}
-					log.Println(r)
 				}
 
 			}

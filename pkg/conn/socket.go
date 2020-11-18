@@ -1,8 +1,9 @@
 package conn
 
 import (
-	"log"
 	"net/url"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/gorilla/websocket"
 )
@@ -15,6 +16,6 @@ func ConnectToSocket(address string) *websocket.Conn {
 	if err != nil {
 		log.Fatal("dial:", err)
 	}
-	log.Printf("Connected to %s", u.String())
+	log.Debug("Connected to ", u.String())
 	return c
 }

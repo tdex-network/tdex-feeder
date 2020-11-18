@@ -2,10 +2,11 @@ package main
 
 import (
 	"flag"
-	"log"
 	"os"
 	"os/signal"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/gorilla/websocket"
 	"github.com/tdex-network/tdex-feeder/config"
@@ -20,10 +21,15 @@ const (
 )
 
 func main() {
+
 	// Checks for command line flags for Config Path
 	confFlag := flag.String("conf", defaultConfigPath, "Configuration File Path")
+	debugFlag := flag.String("debug", "false", "Log Debug Informations")
 	flag.Parse()
 
+	if *debugFlag == "true" {
+		log.SetLevel(log.DebugLevel)
+	}
 	// Loads Config File
 	conf := config.LoadConfig(*confFlag)
 
@@ -57,7 +63,7 @@ func main() {
 	// Periodically sends gRPC request to update price
 	go conn.UpdateMarketPricegRPC(marketsInfos, clientgRPC)
 
-	// Loop to keep cycle alive. Aways Interrupt to close the connection.
+	// Loop to keep cycle alive. Waits for Interrupt to close the connection.
 	for {
 		select {
 		case <-interrupt:

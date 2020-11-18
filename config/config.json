@@ -7,13 +7,13 @@
       "base_asset": "lbtc",
       "quote_asset":"usd",
       "kraken_ticker": "XBT/USD",
-      "interval": 10
+      "interval": 1
     },
     {
       "base_asset": "lbtc",
       "quote_asset":"eur",
       "kraken_ticker": "XBT/EUR",
-      "interval": 15
+      "interval": 2
     } 
   ]
 }

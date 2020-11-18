@@ -17,11 +17,11 @@ type MarketInfo struct {
 // DefaultMarketInfo returns a pointer to a MarketInfo struct
 // with the default configurations.
 func DefaultMarketInfo(market config.Market) *MarketInfo {
-	var marketInfo MarketInfo
-	marketInfo.SetConfig(market)
-	marketInfo.SetPrice(0.00)
-	marketInfo.SetInterval(market.Interval)
-	return &marketInfo
+	return &MarketInfo{
+		config:   market,
+		price:    0.00,
+		interval: time.NewTicker(time.Second * time.Duration(market.Interval)),
+	}
 }
 
 func (marketInfo *MarketInfo) GetConfig() config.Market {

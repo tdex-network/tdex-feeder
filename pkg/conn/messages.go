@@ -2,10 +2,10 @@ package conn
 
 import (
 	"encoding/json"
-	"log"
 	"strconv"
 
 	"github.com/gorilla/websocket"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/tdex-network/tdex-feeder/pkg/marketinfo"
 )
@@ -62,10 +62,10 @@ func GetMessages(done chan string, cSocket *websocket.Conn, marketsInfos []*mark
 	for {
 		_, message, err := cSocket.ReadMessage()
 		if err != nil {
-			log.Println("read:", err)
+			log.Debug("read:", err)
 			return
 		}
-		log.Println(string(message))
+		log.Debug(string(message))
 		handleMessages(message, marketsInfos)
 	}
 }
