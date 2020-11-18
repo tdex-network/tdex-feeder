@@ -2,6 +2,7 @@ package conn
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -29,7 +30,7 @@ func ConnectTogRPC(daemon_endpoint string) (*grpc.ClientConn, error) {
 
 func UpdateMarketPricegRPC(marketInfo *marketinfo.MarketInfo, clientgRPC pboperator.OperatorClient) error {
 	if marketInfo.GetPrice() == 0.00 {
-		log.Println("Can't send gRPC request with no price")
+		return errors.New("Can't send gRPC request with no price")
 	}
 	if marketInfo.GetPrice() != 0.00 {
 		log.Println("Sending gRPC request:", marketInfo.GetConfig().Kraken_ticker, marketInfo.GetPrice())

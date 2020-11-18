@@ -63,8 +63,8 @@ func main() {
 	numberOfMarkets := len(conf.Markets)
 	marketsInfos := make([]*marketinfo.MarketInfo, numberOfMarkets)
 	for i, marketConfig := range conf.Markets {
-		marketsInfos[i] = marketinfo.InitialMarketInfo(marketConfig) InitialMarketInfo
-		defer marketsInfos[i].GetInterval().Stop()
+		marketsInfos[i] = marketinfo.InitialMarketInfo(marketConfig)
+		defer marketsInfos[i].GetTicker().Stop()
 		m := conn.CreateSubscribeToMarketMessage(marketConfig.Kraken_ticker)
 		err = conn.SendRequestMessage(cSocket, m)
 		if err != nil {
@@ -81,7 +81,7 @@ func main() {
 	for {
 		for _, marketInfo := range marketsInfos {
 			select {
-			case <-marketInfo.GetInterval().C:
+			case <-marketInfo.GetTicker().C:
 				// Sends gRPC request to update price
 				err := conn.UpdateMarketPricegRPC(marketInfo, clientgRPC)
 				if err != nil {
