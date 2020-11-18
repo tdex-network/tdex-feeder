@@ -12,10 +12,3 @@ func TestConnectTogRPC(t *testing.T) {
 		t.Fatal(err)
 	}
 }
-
-func TestUpdateMarketPricegRPC(t *testing.T) {
-	_, err := UpdateMarketPricegRPC(endpoint)
-	if err != nil {
-		t.Fatal(err)
-	}
-}

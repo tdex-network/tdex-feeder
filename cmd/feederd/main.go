@@ -25,7 +25,7 @@ const (
 
 func main() {
 
-	// Checks for command line flags for Config Path
+	// Checks for command line flags for Config Path.
 	confFlag := flag.String("conf", defaultConfigPath, "Configuration File Path")
 	debugFlag := flag.String("debug", "false", "Log Debug Informations")
 	flag.Parse()
@@ -33,17 +33,17 @@ func main() {
 	if *debugFlag == "true" {
 		log.SetLevel(log.DebugLevel)
 	}
-	// Loads Config File
+	// Loads Config File.
 	conf, err := config.LoadConfig(*confFlag)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Interrupt Notification
+	// Interrupt Notification.
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 
-	// Dials the connection the the Socket
+	// Dials the connection the the Socket.
 	cSocket, err := conn.ConnectToSocket(conf.Kraken_ws_endpoint)
 	if err != nil {
 		log.Fatal("Socket Connection Error: ", err)
@@ -58,11 +58,12 @@ func main() {
 	defer conngRPC.Close()
 	clientgRPC := pboperator.NewOperatorClient(conngRPC)
 
-	// Loads Config Markets infos into Data Structure and Subscribes to Messages from this Markets
+	// Loads Config Markets infos into Data Structure and Subscribes to
+	// Messages from this Markets.
 	numberOfMarkets := len(conf.Markets)
 	marketsInfos := make([]*marketinfo.MarketInfo, numberOfMarkets)
 	for i, marketConfig := range conf.Markets {
-		marketsInfos[i] = marketinfo.DefaultMarketInfo(marketConfig)
+		marketsInfos[i] = marketinfo.InitialMarketInfo(marketConfig) InitialMarketInfo
 		defer marketsInfos[i].GetInterval().Stop()
 		m := conn.CreateSubscribeToMarketMessage(marketConfig.Kraken_ticker)
 		err = conn.SendRequestMessage(cSocket, m)
@@ -71,28 +72,33 @@ func main() {
 		}
 	}
 
-	// Gets messages from subscriptions
+	// Gets messages from subscriptions.
 	done := make(chan string)
 	go conn.GetMessages(done, cSocket, marketsInfos)
 
-	// Periodically sends gRPC request to update price
-	go conn.UpdateMarketPricegRPC(marketsInfos, clientgRPC)
-
-	// Loop to keep cycle alive. Waits for Interrupt to close the connection.
+	// Loop to keep cycle alive. Periodically sends gRPC request to
+	// update price. Waits for Interrupt to close the connection.
 	for {
-		select {
-		case <-interrupt:
-			log.Println("Shutting down Feeder")
-			err := cSocket.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
-			if err != nil {
-				log.Println("write close:", err)
+		for _, marketInfo := range marketsInfos {
+			select {
+			case <-marketInfo.GetInterval().C:
+				// Sends gRPC request to update price
+				err := conn.UpdateMarketPricegRPC(marketInfo, clientgRPC)
+				if err != nil {
+					log.Println("Couldn't send gRPC request: ", err)
+				}
+			case <-interrupt:
+				log.Println("Shutting down Feeder")
+				err := cSocket.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+				if err != nil {
+					log.Fatal("write close:", err)
+				}
+				select {
+				case <-done:
+				case <-time.After(time.Second):
+				}
 				return
 			}
-			select {
-			case <-done:
-			case <-time.After(time.Second):
-			}
-			return
 		}
 	}
 }

@@ -14,9 +14,9 @@ type MarketInfo struct {
 	interval *time.Ticker
 }
 
-// DefaultMarketInfo returns a pointer to a MarketInfo struct
+// InitialMarketInfo returns a pointer to a MarketInfo struct
 // with the default configurations.
-func DefaultMarketInfo(market config.Market) *MarketInfo {
+func InitialMarketInfo(market config.Market) *MarketInfo {
 	return &MarketInfo{
 		config:   market,
 		price:    0.00,

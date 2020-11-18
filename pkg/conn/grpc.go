@@ -27,29 +27,23 @@ func ConnectTogRPC(daemon_endpoint string) (*grpc.ClientConn, error) {
 	return conn, nil
 }
 
-func UpdateMarketPricegRPC(marketsInfos []*marketinfo.MarketInfo, clientgRPC pboperator.OperatorClient) {
-	for {
-		for _, marketInfo := range marketsInfos {
-			select {
-			case <-marketInfo.GetInterval().C:
-				if marketInfo.GetPrice() == 0.00 {
-					log.Println("Can't send gRPC request with no price")
-				}
-				if marketInfo.GetPrice() != 0.00 {
-					log.Println("Sending gRPC request:", marketInfo.GetConfig().Kraken_ticker, marketInfo.GetPrice())
-					ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-					defer cancel()
-					r, err := clientgRPC.UpdateMarketPrice(ctx, &pboperator.UpdateMarketPriceRequest{
-						Market: &pbtypes.Market{BaseAsset: marketInfo.GetConfig().Base_asset, QuoteAsset: marketInfo.GetConfig().Quote_asset},
-						Price:  &pbtypes.Price{BasePrice: 1 / float32(marketInfo.GetPrice()), QuotePrice: float32(marketInfo.GetPrice())}})
-					if err != nil {
-						log.Println(err)
-					}
-					if err == nil {
-						log.Println(r)
-					}
-				}
-			}
+func UpdateMarketPricegRPC(marketInfo *marketinfo.MarketInfo, clientgRPC pboperator.OperatorClient) error {
+	if marketInfo.GetPrice() == 0.00 {
+		log.Println("Can't send gRPC request with no price")
+	}
+	if marketInfo.GetPrice() != 0.00 {
+		log.Println("Sending gRPC request:", marketInfo.GetConfig().Kraken_ticker, marketInfo.GetPrice())
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+		r, err := clientgRPC.UpdateMarketPrice(ctx, &pboperator.UpdateMarketPriceRequest{
+			Market: &pbtypes.Market{BaseAsset: marketInfo.GetConfig().Base_asset, QuoteAsset: marketInfo.GetConfig().Quote_asset},
+			Price:  &pbtypes.Price{BasePrice: 1 / float32(marketInfo.GetPrice()), QuotePrice: float32(marketInfo.GetPrice())}})
+		if err != nil {
+			return err
+		}
+		if err == nil {
+			log.Println(r)
 		}
 	}
+	return nil
 }
