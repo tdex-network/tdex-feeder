@@ -1,3 +1,6 @@
+// Copyright (c) 2020 The VulpemVentures developers
+
+// Feeder allows to connect an external price feed to the TDex Daemon to determine the current market price.
 package main
 
 import (
@@ -31,18 +34,27 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 	}
 	// Loads Config File
-	conf := config.LoadConfig(*confFlag)
+	conf, err := config.LoadConfig(*confFlag)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Interrupt Notification
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 
 	// Dials the connection the the Socket
-	cSocket := conn.ConnectToSocket(conf.Kraken_ws_endpoint)
+	cSocket, err := conn.ConnectToSocket(conf.Kraken_ws_endpoint)
+	if err != nil {
+		log.Fatal("Socket Connection Error: ", err)
+	}
 	defer cSocket.Close()
 
 	// Set up the connection to the gRPC server.
-	conngRPC := conn.ConnectTogRPC(conf.Daemon_endpoint)
+	conngRPC, err := conn.ConnectTogRPC(conf.Daemon_endpoint)
+	if err != nil {
+		log.Fatal("gRPC Connection Error: ", err)
+	}
 	defer conngRPC.Close()
 	clientgRPC := pboperator.NewOperatorClient(conngRPC)
 
@@ -53,7 +65,10 @@ func main() {
 		marketsInfos[i] = marketinfo.DefaultMarketInfo(marketConfig)
 		defer marketsInfos[i].GetInterval().Stop()
 		m := conn.CreateSubscribeToMarketMessage(marketConfig.Kraken_ticker)
-		conn.SendRequestMessage(cSocket, m)
+		err = conn.SendRequestMessage(cSocket, m)
+		if err != nil {
+			log.Fatal("Couldn't send request message: ", err)
+		}
 	}
 
 	// Gets messages from subscriptions

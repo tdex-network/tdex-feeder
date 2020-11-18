@@ -12,36 +12,43 @@ import (
 	"google.golang.org/grpc"
 )
 
+const (
+	timeout = 3
+)
+
 // ConnectTogRPC dials and returns a new client connection to a remote host
-func ConnectTogRPC(daemon_endpoint string) *grpc.ClientConn {
-	conn, err := grpc.Dial(daemon_endpoint, grpc.WithInsecure(), grpc.WithBlock())
+func ConnectTogRPC(daemon_endpoint string) (*grpc.ClientConn, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*timeout)
+	defer cancel()
+	conn, err := grpc.DialContext(ctx, daemon_endpoint, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
-		log.Fatalf("Could not connect to gRPC: %v", err)
+		return conn, err
 	}
-	return conn
+	return conn, nil
 }
 
 func UpdateMarketPricegRPC(marketsInfos []*marketinfo.MarketInfo, clientgRPC pboperator.OperatorClient) {
 	for {
-		for _, marketsInfo := range marketsInfos {
+		for _, marketInfo := range marketsInfos {
 			select {
-			case <-marketsInfo.GetInterval().C:
-				if marketsInfo.GetPrice() == 0.00 {
+			case <-marketInfo.GetInterval().C:
+				if marketInfo.GetPrice() == 0.00 {
 					log.Println("Can't send gRPC request with no price")
-				} else {
-					log.Println("Sending gRPC request:", marketsInfo.GetConfig().Kraken_ticker, marketsInfo.GetPrice())
+				}
+				if marketInfo.GetPrice() != 0.00 {
+					log.Println("Sending gRPC request:", marketInfo.GetConfig().Kraken_ticker, marketInfo.GetPrice())
 					ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 					defer cancel()
 					r, err := clientgRPC.UpdateMarketPrice(ctx, &pboperator.UpdateMarketPriceRequest{
-						Market: &pbtypes.Market{BaseAsset: marketsInfo.GetConfig().Base_asset, QuoteAsset: marketsInfo.GetConfig().Quote_asset},
-						Price:  &pbtypes.Price{BasePrice: 1 / float32(marketsInfo.GetPrice()), QuotePrice: float32(marketsInfo.GetPrice())}})
+						Market: &pbtypes.Market{BaseAsset: marketInfo.GetConfig().Base_asset, QuoteAsset: marketInfo.GetConfig().Quote_asset},
+						Price:  &pbtypes.Price{BasePrice: 1 / float32(marketInfo.GetPrice()), QuotePrice: float32(marketInfo.GetPrice())}})
 					if err != nil {
 						log.Println(err)
-					} else {
+					}
+					if err == nil {
 						log.Println(r)
 					}
 				}
-
 			}
 		}
 	}

@@ -9,13 +9,13 @@ import (
 )
 
 // ConnectToSocket dials and returns a new client connection to a remote host
-func ConnectToSocket(address string) *websocket.Conn {
+func ConnectToSocket(address string) (*websocket.Conn, error) {
 	u := url.URL{Scheme: "wss", Host: address, Path: "/"}
 
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
-		log.Fatal("dial:", err)
+		return c, err
 	}
 	log.Debug("Connected to ", u.String())
-	return c
+	return c, nil
 }

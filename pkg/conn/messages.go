@@ -42,17 +42,16 @@ func CreateSubscribeToMarketMessage(marketpair string) RequestMessage {
 
 // SendRequestMessage gets a socket connection and a RequestMessage struct,
 // marshalls the struct and sends the message using the socket.
-func SendRequestMessage(c *websocket.Conn, m RequestMessage) {
+func SendRequestMessage(c *websocket.Conn, m RequestMessage) error {
 	b, err := json.Marshal(m)
 	if err != nil {
-		log.Println("Marshal error:", err)
-		return
+		return err
 	}
 	err = c.WriteMessage(websocket.TextMessage, []byte(b))
 	if err != nil {
-		log.Println("write:", err)
-		return
+		return err
 	}
+	return nil
 }
 
 // GetMessages keeps a loop that gets the data from the remote host

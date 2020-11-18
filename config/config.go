@@ -53,10 +53,10 @@ func defaultConfig() Config {
 
 // LoadConfigFromFile reads a file with the intended running behaviour
 // and returns a Config struct with the respective configurations.
-func loadConfigFromFile(filePath string) Config {
+func loadConfigFromFile(filePath string) (Config, error) {
 	jsonFile, err := os.Open(filePath)
 	if err != nil {
-		log.Fatal(err)
+		return Config{}, err
 	}
 	defer jsonFile.Close()
 
@@ -64,16 +64,16 @@ func loadConfigFromFile(filePath string) Config {
 
 	byteValue, err := ioutil.ReadAll(jsonFile)
 	if err != nil {
-		log.Fatal(err)
+		return Config{}, err
 	}
 	json.Unmarshal(byteValue, &config)
 
 	err = checkConfigParsing(config)
 	if err != nil {
-		log.Fatal(err)
+		return Config{}, err
 	}
 
-	return config
+	return config, nil
 }
 
 // checkConfigParsing checks if all the required fields
@@ -101,11 +101,11 @@ func checkConfigParsing(config Config) error {
 // LoadConfig handles the default behaviour for loading
 // config.json files. In case the file is not found,
 // it loads the default config.
-func LoadConfig(filePath string) Config {
+func LoadConfig(filePath string) (Config, error) {
 	_, err := os.Stat(filePath)
 	if os.IsNotExist(err) {
 		log.Println("File not found. Loading default config.")
-		return defaultConfig()
+		return defaultConfig(), nil
 	}
 	return loadConfigFromFile(filePath)
 }
