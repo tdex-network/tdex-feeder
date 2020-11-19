@@ -12,40 +12,40 @@ import (
 )
 
 const (
-	defaultDaemon_endpoint    = "localhost:9000"
-	defaultKraken_ws_endpoint = "ws.kraken.com"
-	defaultBase_asset         = "lbtc"
-	defaultQuote_asset        = "usd"
-	defaultKraken_ticker      = "XBT/USD"
-	defaultInterval           = 30
+	defaultDaemonEndpoint   = "localhost:9000"
+	defaultKrakenWsEndpoint = "ws.kraken.com"
+	defaultBaseAsset        = "lbtc"
+	defaultQuoteAsset       = "usd"
+	defaultKrakenTicker     = "XBT/USD"
+	defaultInterval         = 30
 )
 
 type Config struct {
-	Daemon_endpoint    string   `json:"daemon_endpoint,required"`
-	Daemon_macaroon    string   `json:"daemon_macaroon"`
-	Kraken_ws_endpoint string   `json:"kraken_ws_endpoint,required"`
-	Markets            []Market `json:"markets,required"`
+	DaemonEndpoint   string   `json:"daemon_endpoint,required"`
+	DaemonMacaroon   string   `json:"daemon_macaroon"`
+	KrakenWsEndpoint string   `json:"kraken_ws_endpoint,required"`
+	Markets          []Market `json:"markets,required"`
 }
 
 type Market struct {
-	Base_asset    string `json:"base_asset,required"`
-	Quote_asset   string `json:"quote_asset,required"`
-	Kraken_ticker string `json:"kraken_ticker,required"`
-	Interval      int    `json:"interval,required"`
+	BaseAsset    string `json:"base_asset,required"`
+	QuoteAsset   string `json:"quote_asset,required"`
+	KrakenTicker string `json:"kraken_ticker,required"`
+	Interval     int    `json:"interval,required"`
 }
 
 // DefaultConfig returns the datastructure needed
 // for a default connection.
 func defaultConfig() Config {
 	return Config{
-		Daemon_endpoint:    defaultDaemon_endpoint,
-		Kraken_ws_endpoint: defaultKraken_ws_endpoint,
+		DaemonEndpoint:   defaultDaemonEndpoint,
+		KrakenWsEndpoint: defaultKrakenWsEndpoint,
 		Markets: []Market{
 			Market{
-				Base_asset:    defaultBase_asset,
-				Quote_asset:   defaultQuote_asset,
-				Kraken_ticker: defaultKraken_ticker,
-				Interval:      defaultInterval,
+				BaseAsset:    defaultBaseAsset,
+				QuoteAsset:   defaultQuoteAsset,
+				KrakenTicker: defaultKrakenTicker,
+				Interval:     defaultInterval,
 			},
 		},
 	}

@@ -44,14 +44,14 @@ func main() {
 	signal.Notify(interrupt, os.Interrupt)
 
 	// Dials the connection the the Socket.
-	cSocket, err := conn.ConnectToSocket(conf.Kraken_ws_endpoint)
+	cSocket, err := conn.ConnectToSocket(conf.KrakenWsEndpoint)
 	if err != nil {
 		log.Fatal("Socket Connection Error: ", err)
 	}
 	defer cSocket.Close()
 
 	// Set up the connection to the gRPC server.
-	conngRPC, err := conn.ConnectTogRPC(conf.Daemon_endpoint)
+	conngRPC, err := conn.ConnectTogRPC(conf.DaemonEndpoint)
 	if err != nil {
 		log.Fatal("gRPC Connection Error: ", err)
 	}
@@ -65,7 +65,7 @@ func main() {
 	for i, marketConfig := range conf.Markets {
 		marketsInfos[i] = marketinfo.InitialMarketInfo(marketConfig)
 		defer marketsInfos[i].GetTicker().Stop()
-		m := conn.CreateSubscribeToMarketMessage(marketConfig.Kraken_ticker)
+		m := conn.CreateSubscribeToMarketMessage(marketConfig.KrakenTicker)
 		err = conn.SendRequestMessage(cSocket, m)
 		if err != nil {
 			log.Fatal("Couldn't send request message: ", err)

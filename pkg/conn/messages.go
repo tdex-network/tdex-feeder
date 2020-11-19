@@ -81,7 +81,7 @@ func handleMessages(message []byte, marketsInfos []*marketinfo.MarketInfo) {
 		price, err := strconv.ParseFloat(priceAsk[0].(string), 64)
 		if err == nil {
 			for i, marketsInfo := range marketsInfos {
-				if marketsInfo.GetConfig().Kraken_ticker == result[3] {
+				if marketsInfo.GetConfig().KrakenTicker == result[3] {
 					marketsInfos[i].SetPrice(price)
 				}
 			}
