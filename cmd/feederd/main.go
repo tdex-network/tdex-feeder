@@ -50,6 +50,19 @@ func main() {
 	}
 	defer cSocket.Close()
 
+	// Loads Config Markets infos into Data Structure and Subscribes to
+	// Messages from this Markets.
+	numberOfMarkets := len(conf.Markets)
+	marketsInfos := make([]marketinfo.MarketInfo, numberOfMarkets)
+	for i, marketConfig := range conf.Markets {
+		marketsInfos[i] = marketinfo.InitialMarketInfo(marketConfig)
+		m := conn.CreateSubscribeToMarketMessage(marketConfig.KrakenTicker)
+		err = conn.SendRequestMessage(cSocket, m)
+		if err != nil {
+			log.Fatal("Couldn't send request message: ", err)
+		}
+	}
+
 	// Set up the connection to the gRPC server.
 	conngRPC, err := conn.ConnectTogRPC(conf.DaemonEndpoint)
 	if err != nil {
@@ -58,47 +71,25 @@ func main() {
 	defer conngRPC.Close()
 	clientgRPC := pboperator.NewOperatorClient(conngRPC)
 
-	// Loads Config Markets infos into Data Structure and Subscribes to
-	// Messages from this Markets.
-	numberOfMarkets := len(conf.Markets)
-	marketsInfos := make([]*marketinfo.MarketInfo, numberOfMarkets)
-	for i, marketConfig := range conf.Markets {
-		marketsInfos[i] = marketinfo.InitialMarketInfo(marketConfig)
-		defer marketsInfos[i].GetTicker().Stop()
-		m := conn.CreateSubscribeToMarketMessage(marketConfig.KrakenTicker)
-		err = conn.SendRequestMessage(cSocket, m)
-		if err != nil {
-			log.Fatal("Couldn't send request message: ", err)
-		}
-	}
-
 	// Gets messages from subscriptions.
 	done := make(chan string)
-	go conn.GetMessages(done, cSocket, marketsInfos)
+	go conn.HandleMessages(done, cSocket, marketsInfos, clientgRPC)
 
 	// Loop to keep cycle alive. Periodically sends gRPC request to
 	// update price. Waits for Interrupt to close the connection.
 	for {
-		for _, marketInfo := range marketsInfos {
-			select {
-			case <-marketInfo.GetTicker().C:
-				// Sends gRPC request to update price
-				err := conn.UpdateMarketPricegRPC(marketInfo, clientgRPC)
-				if err != nil {
-					log.Println("Couldn't send gRPC request: ", err)
-				}
-			case <-interrupt:
-				log.Println("Shutting down Feeder")
-				err := cSocket.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
-				if err != nil {
-					log.Fatal("write close:", err)
-				}
-				select {
-				case <-done:
-				case <-time.After(time.Second):
-				}
-				return
+		select {
+		case <-interrupt:
+			log.Println("Shutting down Feeder")
+			err := cSocket.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+			if err != nil {
+				log.Fatal("write close:", err)
 			}
+			select {
+			case <-done:
+			case <-time.After(time.Second):
+			}
+			return
 		}
 	}
 }

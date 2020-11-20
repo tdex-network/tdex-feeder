@@ -2,12 +2,15 @@ package conn
 
 import (
 	"encoding/json"
+	"math"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/tdex-network/tdex-feeder/pkg/marketinfo"
+	"github.com/tdex-network/tdex-protobuf/generated/go/operator"
 )
 
 // RequestMessage is the data structure used to create
@@ -54,9 +57,7 @@ func SendRequestMessage(c *websocket.Conn, m RequestMessage) error {
 	return nil
 }
 
-// GetMessages keeps a loop that gets the data from the remote host
-// and calls a function to handle the received json.
-func GetMessages(done chan string, cSocket *websocket.Conn, marketsInfos []*marketinfo.MarketInfo) {
+func HandleMessages(done chan string, cSocket *websocket.Conn, marketsInfos []marketinfo.MarketInfo, clientgRPC operator.OperatorClient) {
 	defer close(done)
 	for {
 		_, message, err := cSocket.ReadMessage()
@@ -65,26 +66,36 @@ func GetMessages(done chan string, cSocket *websocket.Conn, marketsInfos []*mark
 			return
 		}
 		log.Debug(string(message))
-		handleMessages(message, marketsInfos)
+		marketsInfos = retrievePriceFromMessage(message, marketsInfos)
+		marketsInfos = checkInterval(marketsInfos, clientgRPC)
 	}
 }
 
-// handleMessages gets a json with a market pair updated price and
-// a list of marketInfo structs and sets the price for that market pair
-// on the respective struct.
-func handleMessages(message []byte, marketsInfos []*marketinfo.MarketInfo) {
+func checkInterval(marketsInfos []marketinfo.MarketInfo, clientgRPC operator.OperatorClient) []marketinfo.MarketInfo {
+	for i, marketInfo := range marketsInfos {
+		if time.Since(marketInfo.LastSent).Round(time.Second) == time.Duration(marketInfo.Config.Interval*int(math.Pow10(9))) {
+			log.Println(marketInfo.Config.KrakenTicker, marketInfo.Price)
+			UpdateMarketPricegRPC(marketInfo, clientgRPC)
+			marketInfo.LastSent = time.Now()
+			marketsInfos[i] = marketInfo
+		}
+	}
+	return marketsInfos
+}
+
+func retrievePriceFromMessage(message []byte, marketsInfos []marketinfo.MarketInfo) []marketinfo.MarketInfo {
 	var result []interface{}
 	json.Unmarshal([]byte(message), &result)
 	if len(result) == 4 {
 		pricesJson := result[1].(map[string]interface{})
 		priceAsk := pricesJson["c"].([]interface{})
-		price, err := strconv.ParseFloat(priceAsk[0].(string), 64)
-		if err == nil {
-			for i, marketsInfo := range marketsInfos {
-				if marketsInfo.GetConfig().KrakenTicker == result[3] {
-					marketsInfos[i].SetPrice(price)
-				}
+		price, _ := strconv.ParseFloat(priceAsk[0].(string), 64)
+		for i, marketInfo := range marketsInfos {
+			if marketInfo.Config.KrakenTicker == result[3] {
+				marketInfo.Price = price
+				marketsInfos[i] = marketInfo
 			}
 		}
 	}
+	return marketsInfos
 }

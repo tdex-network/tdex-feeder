@@ -2,7 +2,6 @@ package conn
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -28,23 +27,22 @@ func ConnectTogRPC(daemon_endpoint string) (*grpc.ClientConn, error) {
 	return conn, nil
 }
 
-func UpdateMarketPricegRPC(marketInfo *marketinfo.MarketInfo, clientgRPC pboperator.OperatorClient) error {
-	if marketInfo.GetPrice() == 0.00 {
-		return errors.New("Can't send gRPC request with no price")
+func UpdateMarketPricegRPC(marketInfo marketinfo.MarketInfo, clientgRPC pboperator.OperatorClient) {
+	if marketInfo.Price == 0.00 {
+		log.Println("Can't send gRPC request with no price")
 	}
-	if marketInfo.GetPrice() != 0.00 {
-		log.Println("Sending gRPC request:", marketInfo.GetConfig().KrakenTicker, marketInfo.GetPrice())
+	if marketInfo.Price != 0.00 {
+		log.Println("Sending gRPC request:", marketInfo.Config.KrakenTicker, marketInfo.Price)
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
 		r, err := clientgRPC.UpdateMarketPrice(ctx, &pboperator.UpdateMarketPriceRequest{
-			Market: &pbtypes.Market{BaseAsset: marketInfo.GetConfig().BaseAsset, QuoteAsset: marketInfo.GetConfig().QuoteAsset},
-			Price:  &pbtypes.Price{BasePrice: 1 / float32(marketInfo.GetPrice()), QuotePrice: float32(marketInfo.GetPrice())}})
+			Market: &pbtypes.Market{BaseAsset: marketInfo.Config.BaseAsset, QuoteAsset: marketInfo.Config.QuoteAsset},
+			Price:  &pbtypes.Price{BasePrice: 1 / float32(marketInfo.Price), QuotePrice: float32(marketInfo.Price)}})
 		if err != nil {
-			return err
+			log.Println(err)
 		}
 		if err == nil {
 			log.Println(r)
 		}
 	}
-	return nil
 }

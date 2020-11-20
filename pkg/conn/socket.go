@@ -16,6 +16,6 @@ func ConnectToSocket(address string) (*websocket.Conn, error) {
 	if err != nil {
 		return c, err
 	}
-	log.Debug("Connected to ", u.String())
+	log.Println("Connected to ", u.String())
 	return c, nil
 }
