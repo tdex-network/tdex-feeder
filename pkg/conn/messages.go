@@ -74,7 +74,6 @@ func HandleMessages(done chan string, cSocket *websocket.Conn, marketsInfos []ma
 func checkInterval(marketsInfos []marketinfo.MarketInfo, clientgRPC operator.OperatorClient) []marketinfo.MarketInfo {
 	for i, marketInfo := range marketsInfos {
 		if time.Since(marketInfo.LastSent).Round(time.Second) == time.Duration(marketInfo.Config.Interval*int(math.Pow10(9))) {
-			log.Println(marketInfo.Config.KrakenTicker, marketInfo.Price)
 			UpdateMarketPricegRPC(marketInfo, clientgRPC)
 			marketInfo.LastSent = time.Now()
 			marketsInfos[i] = marketInfo

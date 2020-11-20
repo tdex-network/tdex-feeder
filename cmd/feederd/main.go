@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	defaultConfigPath = "./config/config.json"
+	defaultConfigPath = "./config.example.json"
 )
 
 func main() {
