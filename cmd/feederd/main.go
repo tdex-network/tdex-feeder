@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	defaultConfigPath = "./config.example.json"
+	defaultConfigPath = "./config.json"
 )
 
 func main() {
@@ -71,7 +71,8 @@ func main() {
 	defer conngRPC.Close()
 	clientgRPC := pboperator.NewOperatorClient(conngRPC)
 
-	// Gets messages from subscriptions.
+	// HandleMessages from subscriptions. Will periodically call the
+	// gRPC UpdateMarketPrice with the price info from the messages.
 	done := make(chan string)
 	go conn.HandleMessages(done, cSocket, marketsInfos, clientgRPC)
 

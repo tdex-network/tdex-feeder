@@ -58,8 +58,9 @@ Below is a list of commands you will probably find useful.
 
 #### Config file
 
-You can find a config file with an working example in `./config.example.json`
-that will be loaded except if there are instructions otherwise.
+Rename the file `./config.example.json` into `./config.json` 
+and adapt if for your specific purpose. The default example
+connects to kraken socket and to a local instance of tdex-deamon.
 
 ```
 daemon_endpoint: String with the address and port of gRPC host. Required.

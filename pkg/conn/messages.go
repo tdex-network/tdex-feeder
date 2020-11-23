@@ -57,6 +57,9 @@ func SendRequestMessage(c *websocket.Conn, m RequestMessage) error {
 	return nil
 }
 
+// HandleMessages is responsible for the perpetual loop of receiving messages
+// from subscriptions, retrieving the price from them and send the gRPC request
+// to update the market price in the predeterminated interval.
 func HandleMessages(done chan string, cSocket *websocket.Conn, marketsInfos []marketinfo.MarketInfo, clientgRPC operator.OperatorClient) {
 	defer close(done)
 	for {
@@ -71,6 +74,8 @@ func HandleMessages(done chan string, cSocket *websocket.Conn, marketsInfos []ma
 	}
 }
 
+// checkInterval handles the gRPC calls for UpdateMarketPrice
+// at a predeterminated inteval for each market.
 func checkInterval(marketsInfos []marketinfo.MarketInfo, clientgRPC operator.OperatorClient) []marketinfo.MarketInfo {
 	for i, marketInfo := range marketsInfos {
 		if time.Since(marketInfo.LastSent).Round(time.Second) == time.Duration(marketInfo.Config.Interval*int(math.Pow10(9))) {
@@ -82,6 +87,8 @@ func checkInterval(marketsInfos []marketinfo.MarketInfo, clientgRPC operator.Ope
 	return marketsInfos
 }
 
+// retrievePriceFromMessage gets a message from a subscription and retrieves the
+// price information, updating the price of the specific market.
 func retrievePriceFromMessage(message []byte, marketsInfos []marketinfo.MarketInfo) []marketinfo.MarketInfo {
 	var result []interface{}
 	json.Unmarshal([]byte(message), &result)

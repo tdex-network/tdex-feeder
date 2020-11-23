@@ -14,10 +14,10 @@ import (
 const (
 	defaultDaemonEndpoint   = "localhost:9000"
 	defaultKrakenWsEndpoint = "ws.kraken.com"
-	defaultBaseAsset        = "lbtc"
-	defaultQuoteAsset       = "usd"
+	defaultBaseAsset        = "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225"
+	defaultQuoteAsset       = "d73f5cd0954c1bf325f85d7a7ff43a6eb3ea3b516fd57064b85306d43bc1c9ff"
 	defaultKrakenTicker     = "XBT/USD"
-	defaultInterval         = 30
+	defaultInterval         = 10
 )
 
 type Config struct {

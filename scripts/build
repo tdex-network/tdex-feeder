@@ -10,5 +10,4 @@ PARENT_PATH=$(dirname $(
 pushd $PARENT_PATH
 mkdir -p build
 GOOS=$1 GOARCH=$2 go build -ldflags="-s -w" -o build/feederd-$1-$2 cmd/feederd/main.go
-GOOS=$1 GOARCH=$2 go build -ldflags="-s -w" -o build/feeder-$1-$2 cmd/feeder/main.go
 popd
