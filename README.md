@@ -37,26 +37,49 @@ In-depth documentation for using the tdex-feeder is available at [docs.tdex.netw
 
 Below is a list of commands you will probably find useful.
 
-### Linux
+### Build and Run with docker
+
+Build and use `feederd` with docker.
+
+#### Build feederd docker image
+
+At the root of the repository
+```
+docker build -t tdex-feederd .
+```
+Remember to edit the config file first.
+
+#### Run the daemon
+
+```
+docker run -it -d --net=host tdex-feederd
+```
+--net=host in case you're running tdex-deamon locally
+
+### Build it yourself
+
+Builds feeder as static binary and runs the project with default configuration.
+
+#### Linux
 
 `make build-linux`
 
-### Mac
+#### Mac
 
 `make build-mac`
 
-### Run Linux
+#### Run Linux
 
 `make run-linux`
 
-#### Flags
+##### Flags
 
 ```
 -conf: Configuration File Path. Default: "./config/config.json"
 -debug: Log Debug Informations Default: "false"
 ```
 
-#### Config file
+##### Config file
 
 Rename the file `./config.example.json` into `./config.json` 
 and adapt if for your specific purpose. The default example

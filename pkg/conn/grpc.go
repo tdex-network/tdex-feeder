@@ -17,13 +17,14 @@ const (
 )
 
 // ConnectTogRPC dials and returns a new client connection to a remote host
-func ConnectTogRPC(daemon_endpoint string) (*grpc.ClientConn, error) {
+func ConnectTogRPC(daemonEndpoint string) (*grpc.ClientConn, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*timeout)
 	defer cancel()
-	conn, err := grpc.DialContext(ctx, daemon_endpoint, grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.DialContext(ctx, daemonEndpoint, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		return conn, err
 	}
+	log.Println("Connected to gRPC:", daemonEndpoint)
 	return conn, nil
 }
 
