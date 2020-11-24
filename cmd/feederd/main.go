@@ -10,6 +10,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 
 	"github.com/gorilla/websocket"
 	"github.com/tdex-network/tdex-feeder/config"
@@ -24,20 +25,12 @@ const (
 )
 
 func main() {
+	interrupt, cSocket, marketsInfos, conngRPC := setup()
+	infiniteLoops(interrupt, cSocket, marketsInfos, conngRPC)
+}
 
-	// Checks for command line flags for Config Path.
-	confFlag := flag.String("conf", defaultConfigPath, "Configuration File Path")
-	debugFlag := flag.Bool("debug", false, "Log Debug Informations")
-	flag.Parse()
-
-	if *debugFlag == true {
-		log.SetLevel(log.DebugLevel)
-	}
-	// Loads Config File.
-	conf, err := config.LoadConfig(*confFlag)
-	if err != nil {
-		log.Fatal(err)
-	}
+func setup() (chan os.Signal, *websocket.Conn, []marketinfo.MarketInfo, *grpc.ClientConn) {
+	conf := checkFlags()
 
 	// Interrupt Notification.
 	interrupt := make(chan os.Signal, 1)
@@ -48,36 +41,62 @@ func main() {
 	if err != nil {
 		log.Fatal("Socket Connection Error: ", err)
 	}
-	defer cSocket.Close()
-
-	// Loads Config Markets infos into Data Structure and Subscribes to
-	// Messages from this Markets.
-	numberOfMarkets := len(conf.Markets)
-	marketsInfos := make([]marketinfo.MarketInfo, numberOfMarkets)
-	for i, marketConfig := range conf.Markets {
-		marketsInfos[i] = marketinfo.InitialMarketInfo(marketConfig)
-		m := conn.CreateSubscribeToMarketMessage(marketConfig.KrakenTicker)
-		err = conn.SendRequestMessage(cSocket, m)
-		if err != nil {
-			log.Fatal("Couldn't send request message: ", err)
-		}
-	}
+	marketsInfos := loadMarkets(conf, cSocket)
 
 	// Set up the connection to the gRPC server.
 	conngRPC, err := conn.ConnectTogRPC(conf.DaemonEndpoint)
 	if err != nil {
 		log.Fatal("gRPC Connection Error: ", err)
 	}
+	return interrupt, cSocket, marketsInfos, conngRPC
+}
+
+// Checks for command line flags for Config Path and Debug mode.
+// Loads flags as required.
+func checkFlags() config.Config {
+	confFlag := flag.String("conf", defaultConfigPath, "Configuration File Path")
+	debugFlag := flag.Bool("debug", false, "Log Debug Informations")
+	flag.Parse()
+	if *debugFlag == true {
+		log.SetLevel(log.DebugLevel)
+	}
+	// Loads Config File.
+	conf, err := config.LoadConfig(*confFlag)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return conf
+}
+
+// Loads Config Markets infos into Data Structure and Subscribes to
+// Messages from this Markets.
+func loadMarkets(conf config.Config, cSocket *websocket.Conn) []marketinfo.MarketInfo {
+	numberOfMarkets := len(conf.Markets)
+	marketsInfos := make([]marketinfo.MarketInfo, numberOfMarkets)
+	for i, marketConfig := range conf.Markets {
+		marketsInfos[i] = marketinfo.InitialMarketInfo(marketConfig)
+		m := conn.CreateSubscribeToMarketMessage(marketConfig.KrakenTicker)
+		err := conn.SendRequestMessage(cSocket, m)
+		if err != nil {
+			log.Fatal("Couldn't send request message: ", err)
+		}
+	}
+	return marketsInfos
+}
+
+func infiniteLoops(interrupt chan os.Signal, cSocket *websocket.Conn, marketsInfos []marketinfo.MarketInfo, conngRPC *grpc.ClientConn) {
+	defer cSocket.Close()
 	defer conngRPC.Close()
 	clientgRPC := pboperator.NewOperatorClient(conngRPC)
-
-	// HandleMessages from subscriptions. Will periodically call the
-	// gRPC UpdateMarketPrice with the price info from the messages.
 	done := make(chan string)
+	// Handles Messages from subscriptions. Will periodically call the
+	// gRPC UpdateMarketPrice with the price info from the messages.
 	go conn.HandleMessages(done, cSocket, marketsInfos, clientgRPC)
+	checkInterrupt(interrupt, cSocket, done)
+}
 
-	// Loop to keep cycle alive. Periodically sends gRPC request to
-	// update price. Waits for Interrupt to close the connection.
+// Loop to keep cycle alive. Waits Interrupt to close the connection.
+func checkInterrupt(interrupt chan os.Signal, cSocket *websocket.Conn, done chan string) {
 	for {
 		for range interrupt {
 			log.Println("Shutting down Feeder")

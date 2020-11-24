@@ -23,10 +23,10 @@ interface exposed from tdex-deamon `UpdateMarketPrice`.
 $ feederd
 
 # Run with debug mode on.
-$ feederd -debug true
+$ feederd -debug=true
 
 # Run with debug mode and different config path.
-$ feederd -debug true -conf ./config.json
+$ feederd -debug=true -conf=./config.json
 ```
 
 ## 📄 Usage
@@ -54,7 +54,7 @@ Remember to edit the config file first.
 ```
 docker run -it -d --net=host tdex-feederd
 ```
---net=host in case you're running tdex-deamon locally
+`--net=host` in case you're running tdex-deamon locally
 
 ### Build it yourself
 

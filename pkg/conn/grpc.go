@@ -41,9 +41,8 @@ func UpdateMarketPricegRPC(marketInfo marketinfo.MarketInfo, clientgRPC pboperat
 			Price:  &pbtypes.Price{BasePrice: 1 / float32(marketInfo.Price), QuotePrice: float32(marketInfo.Price)}})
 		if err != nil {
 			log.Println(err)
+			return
 		}
-		if err == nil {
-			log.Println(r)
-		}
+		log.Println(r)
 	}
 }
