@@ -21,4 +21,4 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 COPY --from=builder /build/ /
 COPY --from=builder /tdex-feeder/config.json /
 
-CMD ["/feederd-linux","-debug=true"]
+CMD ["/feederd-linux","-debug"]

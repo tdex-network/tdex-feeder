@@ -23,15 +23,11 @@ interface exposed from tdex-deamon `UpdateMarketPrice`.
 $ feederd
 
 # Run with debug mode on.
-$ feederd -debug=true
+$ feederd -debug
 
 # Run with debug mode and different config path.
-$ feederd -debug=true -conf=./config.json
+$ feederd -debug -conf=./config.json
 ```
-
-## 📄 Usage
-
-In-depth documentation for using the tdex-feeder is available at [docs.tdex.network](https://docs.tdex.network/tdex-feeder.html)
 
 ## 🖥 Local Development
 
@@ -76,7 +72,7 @@ Builds feeder as static binary and runs the project with default configuration.
 
 ```
 -conf: Configuration File Path. Default: "./config/config.json"
--debug: Log Debug Informations Default: "false"
+-debug: Log Debug Informations Default: false
 ```
 
 ##### Config file
