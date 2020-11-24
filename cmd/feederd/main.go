@@ -27,10 +27,10 @@ func main() {
 
 	// Checks for command line flags for Config Path.
 	confFlag := flag.String("conf", defaultConfigPath, "Configuration File Path")
-	debugFlag := flag.String("debug", "false", "Log Debug Informations")
+	debugFlag := flag.Bool("debug", false, "Log Debug Informations")
 	flag.Parse()
 
-	if *debugFlag == "true" {
+	if *debugFlag == true {
 		log.SetLevel(log.DebugLevel)
 	}
 	// Loads Config File.
@@ -79,8 +79,7 @@ func main() {
 	// Loop to keep cycle alive. Periodically sends gRPC request to
 	// update price. Waits for Interrupt to close the connection.
 	for {
-		select {
-		case <-interrupt:
+		for range interrupt {
 			log.Println("Shutting down Feeder")
 			err := cSocket.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 			if err != nil {

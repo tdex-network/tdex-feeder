@@ -66,8 +66,10 @@ func loadConfigFromFile(filePath string) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	json.Unmarshal(byteValue, &config)
-
+	err = json.Unmarshal(byteValue, &config)
+	if err != nil {
+		return Config{}, err
+	}
 	err = checkConfigParsing(config)
 	if err != nil {
 		return Config{}, err

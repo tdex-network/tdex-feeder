@@ -2,7 +2,6 @@ package conn
 
 import (
 	"encoding/json"
-	"math"
 	"strconv"
 	"time"
 
@@ -11,6 +10,10 @@ import (
 
 	"github.com/tdex-network/tdex-feeder/pkg/marketinfo"
 	"github.com/tdex-network/tdex-protobuf/generated/go/operator"
+)
+
+const (
+	nanoToSeconds = 1000000000
 )
 
 // RequestMessage is the data structure used to create
@@ -65,7 +68,7 @@ func HandleMessages(done chan string, cSocket *websocket.Conn, marketsInfos []ma
 	for {
 		_, message, err := cSocket.ReadMessage()
 		if err != nil {
-			log.Debug("read:", err)
+			log.Debug("Message Error:", err)
 			return
 		}
 		log.Debug(string(message))
@@ -78,7 +81,9 @@ func HandleMessages(done chan string, cSocket *websocket.Conn, marketsInfos []ma
 // at a predeterminated inteval for each market.
 func checkInterval(marketsInfos []marketinfo.MarketInfo, clientgRPC operator.OperatorClient) []marketinfo.MarketInfo {
 	for i, marketInfo := range marketsInfos {
-		if time.Since(marketInfo.LastSent).Round(time.Second) == time.Duration(marketInfo.Config.Interval*int(math.Pow10(9))) {
+		elapsedSeconds := time.Since(marketInfo.LastSent).Round(time.Second)
+		marketInterval := time.Duration(marketInfo.Config.Interval * int(nanoToSeconds))
+		if elapsedSeconds == marketInterval {
 			UpdateMarketPricegRPC(marketInfo, clientgRPC)
 			marketInfo.LastSent = time.Now()
 			marketsInfos[i] = marketInfo
@@ -91,7 +96,10 @@ func checkInterval(marketsInfos []marketinfo.MarketInfo, clientgRPC operator.Ope
 // price information, updating the price of the specific market.
 func retrievePriceFromMessage(message []byte, marketsInfos []marketinfo.MarketInfo) []marketinfo.MarketInfo {
 	var result []interface{}
-	json.Unmarshal([]byte(message), &result)
+	err := json.Unmarshal([]byte(message), &result)
+	if err != nil {
+		return marketsInfos
+	}
 	if len(result) == 4 {
 		pricesJson := result[1].(map[string]interface{})
 		priceAsk := pricesJson["c"].([]interface{})
