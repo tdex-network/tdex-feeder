@@ -41,7 +41,7 @@ func defaultConfig() Config {
 		DaemonEndpoint:   defaultDaemonEndpoint,
 		KrakenWsEndpoint: defaultKrakenWsEndpoint,
 		Markets: []Market{
-			Market{
+			{
 				BaseAsset:    defaultBaseAsset,
 				QuoteAsset:   defaultQuoteAsset,
 				KrakenTicker: defaultKrakenTicker,
