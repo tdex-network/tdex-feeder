@@ -17,6 +17,8 @@ interface exposed from tdex-deamon `UpdateMarketPrice`.
 
 3. Give executable permissions. (eg. `chmod a+x /usr/local/bin/feederd`)
 
+4. Create [config.json](#config-file) file.
+
 ### Run
 ```sh
 # Run with default config and default flags.
@@ -46,7 +48,7 @@ docker build -t tdex-feederd .
 
 #### Run the daemon
 
-Create a [config.json](https://github.com/francismars/tdex-feeder#config-file) file 
+Create a [config.json](#config-file) file 
 and run the following command in the same folder:
 ```
 docker run -it -d --net=host -v $PWD/config.json:/data/config.json tdex-feederd
