@@ -27,13 +27,6 @@ type Config struct {
 	Markets          []Market `json:"markets,required"`
 }
 
-type Market struct {
-	BaseAsset    string `json:"base_asset,required"`
-	QuoteAsset   string `json:"quote_asset,required"`
-	KrakenTicker string `json:"kraken_ticker,required"`
-	Interval     int    `json:"interval,required"`
-}
-
 // DefaultConfig returns the datastructure needed
 // for a default connection.
 func defaultConfig() Config {
