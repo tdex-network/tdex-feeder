@@ -46,13 +46,10 @@ docker build -t tdex-feederd .
 
 #### Run the daemon
 
-The config.json file will be loaded from a folder mounted as a docker volume.
-- Example:
-At the root of the repository
+The [config.json](https://github.com/francismars/tdex-feeder#config-file) file will be loaded from a folder mounted as a docker volume.
+Run this command in folder the config file is located:
 ```
-mkdir ~/tdex-feederConfig/
-cp config.example.json ~/tdex-feederConfig/config.json
-docker run -it -d --net=host -v ~/tdex-feederConfig/:/data tdex-feederd
+docker run -it -d --net=host -v $PWD/config.json:/data/config.json tdex-feederd
 ```
 `--net=host` in case you're running tdex-deamon locally
 
@@ -75,7 +72,7 @@ Builds feeder as static binary and runs the project with default configuration.
 ##### Flags
 
 ```
--conf: Configuration File Path. Default: "./config/config.json"
+-conf: Configuration File Path. Default: "./config.json"
 -debug: Log Debug Informations Default: false
 ```
 
