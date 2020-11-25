@@ -43,12 +43,16 @@ At the root of the repository
 ```
 docker build -t tdex-feederd .
 ```
-Remember to edit the config file first.
 
 #### Run the daemon
 
+The config.json file will be loaded from a folder mounted as a docker volume.
+- Example:
+At the root of the repository
 ```
-docker run -it -d --net=host tdex-feederd
+mkdir ~/tdex-feederConfig/
+cp config.example.json ~/tdex-feederConfig/config.json
+docker run -it -d --net=host -v ~/tdex-feederConfig/:/data tdex-feederd
 ```
 `--net=host` in case you're running tdex-deamon locally
 

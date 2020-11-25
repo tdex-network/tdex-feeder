@@ -19,6 +19,5 @@ FROM debian:buster
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 
 COPY --from=builder /build/ /
-COPY --from=builder /tdex-feeder/config.json /
 
-CMD ["/feederd-linux","-debug"]
+CMD ["/feederd-linux","-debug","-conf=./data/config.json"]
