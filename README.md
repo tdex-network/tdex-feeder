@@ -46,8 +46,8 @@ docker build -t tdex-feederd .
 
 #### Run the daemon
 
-The [config.json](https://github.com/francismars/tdex-feeder#config-file) file will be loaded from a folder mounted as a docker volume.
-Run this command in folder the config file is located:
+Create a [config.json](https://github.com/francismars/tdex-feeder#config-file) file 
+and run the following command in the same folder:
 ```
 docker run -it -d --net=host -v $PWD/config.json:/data/config.json tdex-feederd
 ```
