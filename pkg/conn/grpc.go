@@ -31,18 +31,16 @@ func ConnectTogRPC(daemonEndpoint string) (*grpc.ClientConn, error) {
 func UpdateMarketPricegRPC(marketInfo marketinfo.MarketInfo, clientgRPC pboperator.OperatorClient) {
 	if marketInfo.Price == 0.00 {
 		log.Println("Can't send gRPC request with no price")
+		return
 	}
-	if marketInfo.Price != 0.00 {
-		log.Println("Sending gRPC request:", marketInfo.Config.KrakenTicker, marketInfo.Price)
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-		defer cancel()
-		r, err := clientgRPC.UpdateMarketPrice(ctx, &pboperator.UpdateMarketPriceRequest{
-			Market: &pbtypes.Market{BaseAsset: marketInfo.Config.BaseAsset, QuoteAsset: marketInfo.Config.QuoteAsset},
-			Price:  &pbtypes.Price{BasePrice: 1 / float32(marketInfo.Price), QuotePrice: float32(marketInfo.Price)}})
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		log.Println(r)
+	log.Println("Sending gRPC request:", marketInfo.Config.KrakenTicker, marketInfo.Price)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	_, err := clientgRPC.UpdateMarketPrice(ctx, &pboperator.UpdateMarketPriceRequest{
+		Market: &pbtypes.Market{BaseAsset: marketInfo.Config.BaseAsset, QuoteAsset: marketInfo.Config.QuoteAsset},
+		Price:  &pbtypes.Price{BasePrice: 1 / float32(marketInfo.Price), QuotePrice: float32(marketInfo.Price)}})
+	if err != nil {
+		log.Println(err)
+		return
 	}
 }
