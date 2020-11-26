@@ -14,12 +14,9 @@ import (
 const (
 	defaultDaemonEndpoint   = "localhost:9000"
 	defaultKrakenWsEndpoint = "ws.kraken.com"
-	defaultBaseAsset        = "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225"
-	defaultQuoteAsset       = "d73f5cd0954c1bf325f85d7a7ff43a6eb3ea3b516fd57064b85306d43bc1c9ff"
-	defaultKrakenTicker     = "XBT/USD"
-	defaultInterval         = 10
 )
 
+// Config defines the struct for the configuration JSON file
 type Config struct {
 	DaemonEndpoint   string   `json:"daemon_endpoint,required"`
 	DaemonMacaroon   string   `json:"daemon_macaroon"`
@@ -33,14 +30,7 @@ func defaultConfig() Config {
 	return Config{
 		DaemonEndpoint:   defaultDaemonEndpoint,
 		KrakenWsEndpoint: defaultKrakenWsEndpoint,
-		Markets: []Market{
-			{
-				BaseAsset:    defaultBaseAsset,
-				QuoteAsset:   defaultQuoteAsset,
-				KrakenTicker: defaultKrakenTicker,
-				Interval:     defaultInterval,
-			},
-		},
+		Markets:          nil,
 	}
 }
 
@@ -99,7 +89,7 @@ func checkConfigParsing(config Config) error {
 func LoadConfig(filePath string) (Config, error) {
 	_, err := os.Stat(filePath)
 	if os.IsNotExist(err) {
-		log.Printf("File not found: %s. Loading default config.\n", filePath)
+		log.Debug("File not found: %s. Loading default config.\n", filePath)
 		return defaultConfig(), nil
 	}
 	return loadConfigFromFile(filePath)
