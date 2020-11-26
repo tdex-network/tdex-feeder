@@ -28,17 +28,30 @@ func ConnectTogRPC(daemonEndpoint string) (*grpc.ClientConn, error) {
 	return conn, nil
 }
 
+// UpdateMarketPricegRPC calls the tdex daemon UpdateMarketPrice rpc endpoint to update a defined market
 func UpdateMarketPricegRPC(marketInfo marketinfo.MarketInfo, clientgRPC pboperator.OperatorClient) {
+
 	if marketInfo.Price == 0.00 {
 		log.Println("Can't send gRPC request with no price")
 		return
 	}
-	log.Println("Sending gRPC request:", marketInfo.Config.KrakenTicker, marketInfo.Price)
+
+	log.Printf("%s %g for market %s-%s", marketInfo.Config.KrakenTicker, marketInfo.Price, marketInfo.Config.BaseAsset[:4], marketInfo.Config.QuoteAsset[:4])
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
+
 	_, err := clientgRPC.UpdateMarketPrice(ctx, &pboperator.UpdateMarketPriceRequest{
-		Market: &pbtypes.Market{BaseAsset: marketInfo.Config.BaseAsset, QuoteAsset: marketInfo.Config.QuoteAsset},
-		Price:  &pbtypes.Price{BasePrice: 1 / float32(marketInfo.Price), QuotePrice: float32(marketInfo.Price)}})
+		Market: &pbtypes.Market{
+			BaseAsset:  marketInfo.Config.BaseAsset,
+			QuoteAsset: marketInfo.Config.QuoteAsset,
+		},
+		Price: &pbtypes.Price{
+			BasePrice:  1 / float32(marketInfo.Price),
+			QuotePrice: float32(marketInfo.Price),
+		},
+	})
+
 	if err != nil {
 		log.Println(err)
 		return

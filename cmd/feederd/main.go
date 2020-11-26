@@ -42,6 +42,9 @@ func setup() (chan os.Signal, *websocket.Conn, []marketinfo.MarketInfo, *grpc.Cl
 		log.Fatal("Socket Connection Error: ", err)
 	}
 	marketsInfos := loadMarkets(conf, cSocket)
+	if len(marketsInfos) == 0 {
+		log.Warn("list of market to feed is empty")
+	}
 
 	// Set up the connection to the gRPC server.
 	conngRPC, err := conn.ConnectTogRPC(conf.DaemonEndpoint)
