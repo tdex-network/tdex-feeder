@@ -41,11 +41,11 @@ help:
 
 ## run-linux: Run locally with default configuration
 run-linux: clean build-linux
-	./build/tdexd-linux-amd64
+	./build/feederd-linux-amd64
 
 ## run-mac: Run locally with default configuration
 run-mac: clean build-mac
-	./build/tdexd-darwin-amd64
+	./build/feederd-darwin-amd64
 
 ## vet: code analysis
 vet:
