@@ -2,6 +2,8 @@ package conn
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -10,7 +12,5 @@ const (
 
 func TestConnectToSocket(t *testing.T) {
 	_, err := ConnectToSocket(kraken)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Nil(t, err)
 }
