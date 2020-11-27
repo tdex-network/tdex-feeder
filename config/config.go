@@ -89,7 +89,7 @@ func checkConfigParsing(config Config) error {
 func LoadConfig(filePath string) (Config, error) {
 	_, err := os.Stat(filePath)
 	if os.IsNotExist(err) {
-		log.Debug("File not found: %s. Loading default config.\n", filePath)
+		log.Debugf("File not found: %s. Loading default config.\n", filePath)
 		return defaultConfig(), nil
 	}
 	return loadConfigFromFile(filePath)
