@@ -1,0 +1,39 @@
+builds:
+  - id: "feederd"
+    main: ./cmd/feederd
+    ldflags:
+      - -s -w
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+    binary: feederd
+checksum:
+  name_template: "checksums.txt"
+signs:
+  - artifacts: checksum
+    args:
+      [
+        "--batch",
+        "-u",
+        "{{ .Env.GPG_FINGERPRINT }}",
+        "--output",
+        "${signature}",
+        "--detach-sign",
+        "${artifact}",
+      ]
+snapshot:
+  name_template: "{{ .Tag }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+archives:
+  - id: feederd
+    format: binary
+    builds:
+      - feederd
+    name_template: "feederd-v{{ .Version }}-{{ .Os }}-{{ .Arch }}"
