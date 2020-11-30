@@ -53,6 +53,7 @@ func (socket *krakenWebSocket) Connect(address string, tickersToSubscribe []stri
 
 func (socket *krakenWebSocket) Close() error {
 	err := socket.connSocket.Close()
+	socket.connSocket = nil
 	return err
 }
 
@@ -84,8 +85,8 @@ func (socket *krakenWebSocket) Read() (*TickerWithPrice, error) {
 	ticker := msgAsJson[3].(string)
 
 	return &TickerWithPrice{
-		ticker: ticker,
-		price: price,
+		Ticker: ticker,
+		Price: price,
 	}, nil
 }
 
