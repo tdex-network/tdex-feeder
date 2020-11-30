@@ -1,8 +1,8 @@
 package ports
 
 type TickerWithPrice struct {
-	ticker string
-	price float64
+	Ticker string
+	Price float64
 }
 
 type subscription struct {
