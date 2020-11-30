@@ -1,6 +1,10 @@
 package domain
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/google/uuid"
+)
 
 type MarketPrice struct {
 	Market Market
@@ -8,8 +12,33 @@ type MarketPrice struct {
 }
 
 type Feed interface {
-	getId() string
-	getMarketPriceFeed() <-chan MarketPrice
+	AddMarketPrice(marketPrice MarketPrice)
+	getMarketPriceChan() <-chan MarketPrice	
+}
+
+type feed struct {
+	id string
+	marketPriceChan chan MarketPrice
+}
+
+func NewFeed() (Feed, error) {
+	uuid, err := uuid.NewUUID()
+	if err != nil {
+		return nil, err
+	}
+
+	return &feed{
+		id: uuid.String(),
+		marketPriceChan: make(chan MarketPrice),
+	}, nil
+}
+
+func (f feed) AddMarketPrice(marketPrice MarketPrice) {
+	f.marketPriceChan <- marketPrice
+}
+
+func (f feed) getMarketPriceChan() <-chan MarketPrice {
+	return f.marketPriceChan
 }
 
 func merge(feeds ...Feed) <-chan MarketPrice {
@@ -18,7 +47,7 @@ func merge(feeds ...Feed) <-chan MarketPrice {
 
 	wg.Add(len(feeds))
 	for _, feed := range feeds {
-		c := feed.getMarketPriceFeed()
+		c := feed.getMarketPriceChan()
 		go func(c <-chan MarketPrice) {
 			for marketPrice := range c {
                 mergedChan <- marketPrice
