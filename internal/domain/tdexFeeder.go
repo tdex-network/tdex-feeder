@@ -20,6 +20,8 @@ func NewTdexFeeder(feeds []Feed, targets []Target) TdexFeeder {
 	return &tdexFeeder{
 		feeds: feeds,
 		targets: targets,
+		stopChan: make(chan bool),
+		running: false,
 	}
 }
 
