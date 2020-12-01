@@ -34,7 +34,25 @@ func (socket *krakenWebSocket) Connect(address string, tickersToSubscribe []stri
 		return err
 	}
 
+	var connectMsg map[string]interface{}
+
+	_, msg, err := conn.ReadMessage()
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(msg, &connectMsg)
+	if err != nil {
+		return err
+	}
+
+	if status, ok := connectMsg["status"]; !ok || status != "online" {
+		return errors.New("Error connection with: " + fmt.Sprint(address))
+	} 
+
 	for _, ticker := range tickersToSubscribe {
+		var subscribeMsg map[string]interface{}
+
 		msg := createSubscribeToMarketMessage(ticker)
 		msgBytes, err := json.Marshal(msg)
 		if err != nil {
@@ -45,6 +63,20 @@ func (socket *krakenWebSocket) Connect(address string, tickersToSubscribe []stri
 		if err != nil {
 			return err
 		}
+
+		_, subscribeMessage, err := conn.ReadMessage()
+		if err != nil {
+			return err
+		}
+
+		err = json.Unmarshal(subscribeMessage, &subscribeMsg)
+		if err != nil {
+			return err
+		}
+
+		if status, ok := subscribeMsg["status"]; !ok || status != "subscribed" {
+			return errors.New("Error subscribe to: " + fmt.Sprint(ticker))
+		} 
 	}
 
 	socket.connSocket = conn
@@ -64,13 +96,15 @@ func (socket *krakenWebSocket) Read() (*TickerWithPrice, error) {
 	}
 
 	var msgAsJson []interface{}
-
 	_, message, err := socket.connSocket.ReadMessage()
 	if err != nil {
 		return nil, err
 	}
 
-	err = json.Unmarshal([]byte(message), &msgAsJson)	
+	msg := string(message)
+	log.Info(msg)
+
+	err = json.Unmarshal([]byte(msg), &msgAsJson)	
 	if err != nil {
 		return nil, err
 	}
