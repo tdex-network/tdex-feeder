@@ -8,8 +8,6 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
-	"syscall"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/tdex-network/tdex-feeder/internal/adapters"
@@ -24,7 +22,7 @@ const (
 func main() {
 	// Interrupt Notification.
 	interrupt := make(chan os.Signal, 1)
-	signal.Notify(interrupt, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(interrupt, os.Interrupt)
 
 	// retrieve feeder service from config file
 	envConfigPath := os.Getenv(envConfigPathKey)
@@ -34,6 +32,7 @@ func main() {
 	feeder := configFileToFeederService(envConfigPath)
 
 
+	log.Info("Start the feeder")
 	go func ()  {
 		err := feeder.Start()
 		if err != nil {
@@ -42,15 +41,14 @@ func main() {
 	}()
 
 	// check for interupt
-	for range interrupt {
-		log.Println("Shutting down the feeder")
-		time.Sleep(time.Second)
-		err := feeder.Stop()
-		if err != nil {
-			log.Fatal(err)
-		}
+	<-interrupt
+	log.Info("Shutting down the feeder")
+	err := feeder.Stop()
+	log.Info("Feeder service stopped")
+	if err != nil {
+		log.Fatal(err)
 	}
-
+	os.Exit(0)
 }
 
 func configFileToFeederService(configFilePath string) application.FeederService {
