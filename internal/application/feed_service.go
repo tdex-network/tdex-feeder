@@ -18,7 +18,7 @@ type FeedService interface {
 type krakenFeedService struct {
 	feed domain.Feed
 	krakenWebSocket ports.KrakenWebSocket
-	listening bool
+	stopChan chan bool
 	tickersToMarketMap map[string]domain.Market
 }
 
@@ -45,7 +45,7 @@ func NewKrakenFeedService(
 	return &krakenFeedService{
 		krakenWebSocket: krakenSocket,
 		feed: newFeed,
-		listening: false,
+		stopChan: make(chan bool),
 		tickersToMarketMap: tickersToMarketMap,
 	}, nil
 }
@@ -55,35 +55,42 @@ func (f *krakenFeedService) GetFeed() domain.Feed {
 }
 
 func (f *krakenFeedService) Start() {
+	listening := true
 	log.Println("Start listening kraken service")
-	for f.listening {
-		time.Sleep(500 * time.Millisecond)
-		tickerWithPrice, err := f.krakenWebSocket.Read()
-		if err != nil {
-			log.Debug("Read message error: ", err)
-		}
+	for listening {
+		select {
+		case <-f.stopChan:
+			listening = false
+			err := f.krakenWebSocket.Close()
+			if err != nil {
+				log.Fatal(err)
+			}
 
-		market, ok := f.tickersToMarketMap[tickerWithPrice.Ticker]
-		if !ok {
-			log.Debug("Market not found for ticker: ", tickerWithPrice.Ticker)
-		}
+			log.Info("Feed service stopped")
+			break;
+		case <-time.After(500 * time.Millisecond):
+			tickerWithPrice, err := f.krakenWebSocket.Read()
+			if err != nil {
+				log.Debug("Read message error: ", err)
+				continue
+			}
 
-		f.feed.AddMarketPrice(domain.MarketPrice{
-			Market: market,
-			Price: domain.Price{
-				BasePrice: 1 / float32(tickerWithPrice.Price),
-				QuotePrice: float32(tickerWithPrice.Price),
-			},
-		})
+			market, ok := f.tickersToMarketMap[tickerWithPrice.Ticker]
+			if !ok {
+				log.Debug("Market not found for ticker: ", tickerWithPrice.Ticker)
+			}
+
+			f.feed.AddMarketPrice(domain.MarketPrice{
+				Market: market,
+				Price: domain.Price{
+					BasePrice: 1 / float32(tickerWithPrice.Price),
+					QuotePrice: float32(tickerWithPrice.Price),
+				},
+			})
+		}
 	}
 }
 
 func (f *krakenFeedService) Stop() {
-	f.listening = false
-	err := f.krakenWebSocket.Close()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Info("Feed service stopped")
+	f.stopChan <- true
 }
