@@ -53,6 +53,7 @@ func (f *krakenFeedService) GetFeed() domain.Feed {
 }
 
 func (f *krakenFeedService) Start() {
+	log.Println("Start listening kraken service")
 	for f.listening {
 		tickerWithPrice, err := f.krakenWebSocket.Read()
 		if err != nil {
