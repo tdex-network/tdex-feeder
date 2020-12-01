@@ -77,5 +77,10 @@ func (f *krakenFeedService) Start() {
 
 func (f *krakenFeedService) Stop() {
 	f.listening = false
-	f.krakenWebSocket.Close()
+	err := f.krakenWebSocket.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Info("Feed service stopped")
 }
