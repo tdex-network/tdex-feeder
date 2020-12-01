@@ -1,6 +1,8 @@
 package application
 
 import (
+	"time"
+
 	log "github.com/sirupsen/logrus"
 
 	"github.com/tdex-network/tdex-feeder/internal/domain"
@@ -55,6 +57,7 @@ func (f *krakenFeedService) GetFeed() domain.Feed {
 func (f *krakenFeedService) Start() {
 	log.Println("Start listening kraken service")
 	for f.listening {
+		time.Sleep(500 * time.Millisecond)
 		tickerWithPrice, err := f.krakenWebSocket.Read()
 		if err != nil {
 			log.Debug("Read message error: ", err)
