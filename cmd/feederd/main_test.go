@@ -17,9 +17,10 @@ import (
 
 const (
 	containerName = "tdexFeederContainerTest"
-	daemonEndpoint = "http://127.0.0.1:9000"
+	daemonEndpoint = "127.0.0.1:9000"
 	krakenWsEndpoint = "ws.kraken.com"
-	nigiriUrl = "https://nigiri.network/liquid/api"
+	// nigiriUrl = "https://nigiri.network/liquid/api"
+	nigiriUrl = "http://localhost:3001"
 	password = "vulpemsecret"
 )
 
@@ -28,9 +29,9 @@ func TestFeeder(t *testing.T) {
 	t.Cleanup(stopAndDeleteContainer)
 
 	t.Run("should feed the market using kraken feed", func(t *testing.T) {
-		go main()
-		time.Sleep(30 * time.Second)
-		os.Exit(0)
+		main()
+		// time.Sleep(30 * time.Second)
+		// os.Exit(0)
 	})
 }
 
@@ -154,6 +155,11 @@ func mint(address string, amount int) (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
+
+	if resp.StatusCode != 200 {
+		return "", "", errors.New("Internal server error")
+	}
+
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return "", "", err
@@ -162,6 +168,10 @@ func mint(address string, amount int) (string, string, error) {
 	err = json.Unmarshal(data, &respBody)
 	if err != nil {
 		return "", "", err
+	}
+
+	if respBody["asset"].(string) == "" {
+		return mint(address, amount)
 	}
 
 	return respBody["txId"].(string), respBody["asset"].(string), nil
