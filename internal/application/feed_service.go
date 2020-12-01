@@ -30,7 +30,7 @@ func NewKrakenFeedService(
 	}
 
 	tickersToSubscribe := make([]string, 0)
-	for k, _ := range tickersToMarketMap {
+	for k := range tickersToMarketMap {
 		tickersToSubscribe = append(tickersToSubscribe, k)
 	}
 
