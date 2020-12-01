@@ -22,12 +22,16 @@ type krakenFeedService struct {
 
 func NewKrakenFeedService(
 	address string, 
-	tickersToSubscribe []string,
 	tickersToMarketMap map[string]domain.Market,
 ) (FeedService, error) {
 	newFeed, err := domain.NewFeed()
 	if err != nil {
 		return nil, err
+	}
+
+	tickersToSubscribe := make([]string, 0)
+	for k, _ := range tickersToMarketMap {
+		tickersToSubscribe = append(tickersToSubscribe, k)
 	}
 
 	krakenSocket := ports.NewKrakenWebSocket()
