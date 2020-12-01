@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/url"
 	"strconv"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/gorilla/websocket"
 )
@@ -52,7 +53,7 @@ func (socket *krakenWebSocket) Connect(address string, tickersToSubscribe []stri
 }
 
 func (socket *krakenWebSocket) Close() error {
-	err := socket.connSocket.Close()
+	err := socket.connSocket.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 	socket.connSocket = nil
 	return err
 }
@@ -98,7 +99,7 @@ func connectToSocket(address string) (*websocket.Conn, error) {
 	if err != nil {
 		return c, err
 	}
-	log.Println("Connected to socket:", u.String())
+	log.Info("Connected to socket:", u.String())
 	return c, nil
 }
 
