@@ -58,6 +58,7 @@ func TestFeeder(t *testing.T) {
 		}	
 
 		time.Sleep(500 * time.Millisecond)
+		feeder.Stop()
 
 		assert.Equal(t, 15, len(target.marketPrices))
 	})
