@@ -69,7 +69,11 @@ func (f *krakenFeedService) Start() {
 			log.Info("Feed service stopped")
 			break;
 		case <-time.After(500 * time.Millisecond):
+			log.Info("Read socket interval")
 			tickerWithPrice, err := f.krakenWebSocket.Read()
+			if (tickerWithPrice != nil) {
+				log.Info("msg =" + string(tickerWithPrice.Ticker))
+			}
 			if err != nil {
 				log.Debug("Read message error: ", err)
 				continue
