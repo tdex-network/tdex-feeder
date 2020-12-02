@@ -52,9 +52,12 @@ vet:
 	@echo "Vet..."
 	@go vet ./...
 
-
 ## test: runs go unit test with default values
-test: fmt
-	chmod u+x ./scripts/test
-	./scripts/test 
+test: fmt shorttest
 
+shorttest: 
+	@echo "Testing..."
+	go test -v -count=1 -race -short ./...
+
+integrationtest:
+	go test -v -count=1 ./cmd/feederd
