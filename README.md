@@ -1,6 +1,6 @@
 # tdex-feeder
 
-Feeder allows to connect an external price feed to the TDex Daemon to determine the current market price
+Feeder allows to connect several price feeds to TDex Daemon(s) in order to automatically update the markets prices.
 
 ## Overview
 
@@ -24,11 +24,8 @@ interface exposed from tdex-deamon `UpdateMarketPrice`.
 # Run with default config and default flags.
 $ feederd
 
-# Run with debug mode on.
-$ feederd -debug
-
 # Run with debug mode and different config path.
-$ feederd -debug -conf=./config.json
+$ TDEX_FEEDER_CONFIG_PATH=./config.json feederd 
 ```
 
 ## 🖥 Local Development
@@ -71,13 +68,6 @@ Builds feeder as static binary and runs the project with default configuration.
 
 `make run-linux`
 
-##### Flags
-
-```
--conf: Configuration File Path. Default: "./config.json"
--debug: Log Debug Informations Default: false
-```
-
 ##### Config file
 
 Rename the file `./config.example.json` into `./config.json` 
@@ -86,11 +76,9 @@ connects to kraken socket and to a local instance of tdex-deamon.
 
 ```
 daemon_endpoint: String with the address and port of gRPC host. Required.
-daemon_macaroon: String with the daemon_macaroon necessary for authentication.
 kraken_ws_endpoint: String with the address and port of kraken socket. Required.
 markets: Json List with necessary markets informations. Required.
-base_asset: String of the Hash of the base asset for gRPC request. Required.
-quote_asset: String of the Hash of the quote asset for gRPC request. Required.
-kraken_ticker: String with the ticker we want kraken to provide informations on. Required.
-interval: Int with the time in secods between gRPC requests. Required.
+  base_asset: String of the Hash of the base asset for gRPC request. Required.
+  quote_asset: String of the Hash of the quote asset for gRPC request. Required.
+  kraken_ticker: String with the ticker we want kraken to provide informations on. Required.
 ```
