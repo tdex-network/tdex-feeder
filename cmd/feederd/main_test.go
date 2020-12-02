@@ -25,13 +25,17 @@ const (
 )
 
 func TestFeeder(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
 	runDaemonAndInitConfigFile(t)
 	t.Cleanup(stopAndDeleteContainer)
 
 	t.Run("should feed the market using kraken feed", func(t *testing.T) {
-		main()
-		// time.Sleep(30 * time.Second)
-		// os.Exit(0)
+		go main()
+		time.Sleep(30 * time.Second)
+		os.Exit(0)
 	})
 }
 
@@ -72,6 +76,7 @@ func runDaemonAndCreateMarket(t *testing.T) string {
 		"-e", "TDEX_FEE_ACCOUNT_BALANCE_TRESHOLD=1000",
 		"-e", "TDEX_BASE_ASSET=5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225",
 		"-e", "TDEX_LOG_LEVEL=5",
+		"--network=host",
 		"tdexd:latest",
 	)
 
