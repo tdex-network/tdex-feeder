@@ -101,10 +101,7 @@ func (socket *krakenWebSocket) Read() (*TickerWithPrice, error) {
 		return nil, err
 	}
 
-	msg := string(message)
-	log.Info(msg)
-
-	err = json.Unmarshal([]byte(msg), &msgAsJson)	
+	err = json.Unmarshal([]byte(message), &msgAsJson)	
 	if err != nil {
 		return nil, err
 	}
