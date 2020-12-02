@@ -1,6 +1,9 @@
 package domain
 
-import "errors"
+import (
+	"errors"
+	"sync"
+)
 
 
 type TdexFeeder interface {
@@ -14,6 +17,7 @@ type tdexFeeder struct {
 	targets []Target
 	stopChan chan bool
 	running bool
+	locker sync.Locker
 }
 
 func NewTdexFeeder(feeds []Feed, targets []Target) TdexFeeder {
@@ -22,6 +26,7 @@ func NewTdexFeeder(feeds []Feed, targets []Target) TdexFeeder {
 		targets: targets,
 		stopChan: make(chan bool),
 		running: false,
+		locker: &sync.Mutex{},
 	}
 }
 
@@ -33,7 +38,7 @@ func (t *tdexFeeder) Start() error {
 	t.running = true
 	marketPriceChannel := merge(t.feeds...)
 
-	for t.running {
+	for t.IsRunning() {
 		select {
 		case <-t.stopChan:
 			t.running = false
@@ -56,6 +61,8 @@ func (t *tdexFeeder) Stop() {
 }
 
 func (t *tdexFeeder) IsRunning() bool {
+	t.locker.Lock()
+	defer t.locker.Unlock()
 	return t.running
 }
 
