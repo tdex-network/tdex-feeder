@@ -24,29 +24,27 @@ func TestKrakenFeedService(t *testing.T) {
 		QuoteAsset: quoteAsset,
 	}
 
-	t.Run("Start a service should feed the Feed instance", func(t *testing.T) {
-		svc, err := NewKrakenFeedService(krakenWsEndpoint, tickerMap)
+	svc, err := NewKrakenFeedService(krakenWsEndpoint, tickerMap)
+	if err != nil {
+		t.Error(err)
+	}
+	go svc.Start()
+	defer svc.Stop()
+
+	feed := svc.GetFeed()
+	target := &mockTarget{marketPrices: []domain.MarketPrice{}}
+	feeder := domain.NewTdexFeeder([]domain.Feed{feed}, []domain.Target{target})
+	go func() {
+		err := feeder.Start()
 		if err != nil {
 			t.Error(err)
 		}
-		go svc.Start()
-		defer svc.Stop()
+	}()
 
-		feed := svc.GetFeed()
-		target := &mockTarget{marketPrices: []domain.MarketPrice{}}
-		feeder := domain.NewTdexFeeder([]domain.Feed{feed}, []domain.Target{target})
-		go func() {
-			err := feeder.Start()
-			if err != nil {
-				t.Error(err)
-			}
-		}()
+	time.Sleep(10 * time.Second)
+	feeder.Stop()
 
-		time.Sleep(10 * time.Second)
-		feeder.Stop()
-
-		assert.Equal(t, true, len(target.marketPrices) > 0)
-	})
+	assert.Equal(t, true, len(target.marketPrices) > 0)
 }
 
 type mockTarget struct {

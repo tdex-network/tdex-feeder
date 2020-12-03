@@ -18,21 +18,17 @@ func createAndConnect() (KrakenWebSocket, error) {
 }
 
 func TestConnectToKrakenWebSocket(t *testing.T) {
-	t.Run("should connect to a valid kraken web socket address", func(t *testing.T) {
-		_, err := createAndConnect()
-		assert.Nil(t, err)
-	})
+	_, err := createAndConnect()
+	assert.Nil(t, err)
 }
 
 func TestRead(t *testing.T) {
-	t.Run("should read marketInfo from websocket kraken stream", func(t *testing.T) {
-		ws, err := createAndConnect()
-		if err != nil {
-			t.Error(err)
-		}
+	ws, err := createAndConnect()
+	if err != nil {
+		t.Error(err)
+	}
 
-		tickerWithPrice, err := ws.Read()
-		assert.Nil(t, err)
-		assert.NotNil(t, tickerWithPrice)
-	})
+	tickerWithPrice, err := ws.Read()
+	assert.Nil(t, err)
+	assert.NotNil(t, tickerWithPrice)
 } 
