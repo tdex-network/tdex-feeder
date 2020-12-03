@@ -22,13 +22,15 @@ func TestConnectToKrakenWebSocket(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func TestRead(t *testing.T) {
+func TestListen(t *testing.T) {
 	ws, err := createAndConnect()
 	if err != nil {
 		t.Error(err)
 	}
 
-	tickerWithPrice, err := ws.Read()
+	tickerWithPriceChan, err := ws.StartListen()
 	assert.Nil(t, err)
-	assert.NotNil(t, tickerWithPrice)
+
+	nextTickerWithPrice := <- tickerWithPriceChan
+	assert.NotNil(t, nextTickerWithPrice)
 } 

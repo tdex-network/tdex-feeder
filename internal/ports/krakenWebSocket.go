@@ -1,142 +1,79 @@
 package ports
 
 import (
-	"encoding/json"
 	"errors"
-	"fmt"
-	"net/url"
-	"strconv"
 
+	ws "github.com/aopoltorzhicky/go_kraken/websocket"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/gorilla/websocket"
 )
 
 type KrakenWebSocket interface {
 	Connect(address string, tickersToSubscribe []string) error
-	Read() (*TickerWithPrice, error)
+	StartListen() (chan TickerWithPrice, error)
 	Close() error
 }
 
 type krakenWebSocket struct {
-	connSocket *websocket.Conn
+	krakenWS *ws.Client
+	tickerWithPriceChan chan TickerWithPrice
 }
 
 func NewKrakenWebSocket() KrakenWebSocket {
 	return &krakenWebSocket{
-		connSocket: nil,
+		krakenWS: ws.New(),
+		tickerWithPriceChan: make(chan TickerWithPrice),
 	}
 }
 
 func (socket *krakenWebSocket) Connect(address string, tickersToSubscribe []string) error {
-	conn, err := connectToSocket(address)
+	// connect to server
+	err := socket.krakenWS.Connect()
+	if err != nil {
+		return err
+	}
+	// test if the server is alive
+	err = socket.krakenWS.Ping()
 	if err != nil {
 		return err
 	}
 
-	var connectMsg map[string]interface{}
-
-	_, msg, err := conn.ReadMessage()
+	// subscribe to tickers
+	err = socket.krakenWS.SubscribeTicker(tickersToSubscribe)
 	if err != nil {
 		return err
 	}
-
-	err = json.Unmarshal(msg, &connectMsg)
-	if err != nil {
-		return err
-	}
-
-	if status, ok := connectMsg["status"]; !ok || status != "online" {
-		return errors.New("Error connection with: " + fmt.Sprint(address))
-	} 
-
-	for _, ticker := range tickersToSubscribe {
-		var subscribeMsg map[string]interface{}
-
-		msg := createSubscribeToMarketMessage(ticker)
-		msgBytes, err := json.Marshal(msg)
-		if err != nil {
-			return err
-		}
-
-		err = conn.WriteMessage(websocket.TextMessage, msgBytes)
-		if err != nil {
-			return err
-		}
-
-		_, subscribeMessage, err := conn.ReadMessage()
-		if err != nil {
-			return err
-		}
-
-		err = json.Unmarshal(subscribeMessage, &subscribeMsg)
-		if err != nil {
-			return err
-		}
-
-		if status, ok := subscribeMsg["status"]; !ok || status != "subscribed" {
-			return errors.New("Error subscribe to: " + fmt.Sprint(ticker))
-		} 
-	}
-
-	socket.connSocket = conn
 
 	return nil
 }
 
 func (socket *krakenWebSocket) Close() error {
-	err := socket.connSocket.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
-	socket.connSocket = nil
-	return err
+	socket.krakenWS.Close()
+	socket.krakenWS = nil
+	return nil
 }
 
-func (socket *krakenWebSocket) Read() (*TickerWithPrice, error) {
-	if socket.connSocket == nil {
+func (socket *krakenWebSocket) StartListen() (chan TickerWithPrice, error) {
+	if socket.krakenWS == nil {
 		return nil, errors.New("Socket not connected")
 	}
 
-	var msgAsJson []interface{}
-	_, message, err := socket.connSocket.ReadMessage()
-	if err != nil {
-		return nil, err
-	}
+	go func() {
+		for obj := range socket.krakenWS.Listen() {
+			switch obj := obj.(type) {
+			case error:
+				log.Debug("Channel closed: ", obj)
+			case ws.DataUpdate:
+				tickerUpdate, ok := obj.Data.(ws.TickerUpdate)
+				if ok {
+					result := TickerWithPrice{
+						Ticker: tickerUpdate.Pair,
+						Price: tickerUpdate.Close.Today.(float64),
+					}
+					socket.tickerWithPriceChan <- result
+				}
+			}
+		}
+	}()
 
-	err = json.Unmarshal([]byte(message), &msgAsJson)	
-	if err != nil {
-		return nil, err
-	}
-
-	if len(msgAsJson) < 4 {
-		return nil, errors.New("Invalid message" + fmt.Sprint(message))
-	}
-
-	pricesJson := msgAsJson[1].(map[string]interface{})
-	priceAsk := pricesJson["c"].([]interface{})
-	price, _ := strconv.ParseFloat(priceAsk[0].(string), 64)
-
-	ticker := msgAsJson[3].(string)
-
-	return &TickerWithPrice{
-		Ticker: ticker,
-		Price: price,
-	}, nil
-}
-
-// ConnectToSocket dials and returns a new client connection to a remote host
-func connectToSocket(address string) (*websocket.Conn, error) {
-	u := url.URL{Scheme: "wss", Host: address, Path: "/"}
-
-	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
-	if err != nil {
-		return c, err
-	}
-	log.Info("Connected to socket:", u.String())
-	return c, nil
-}
-
-// CreateSubscribeToMarketMessage gets a string with a market pair and returns
-// a RequestMessage struct with instructions to subscrive to that market pair ticker.
-func createSubscribeToMarketMessage(ticker string) requestMessage {
-	s := subscription{Name: "ticker"}
-	return requestMessage{"subscribe", []string{ticker}, &s, 0}
+	return socket.tickerWithPriceChan, nil
 }

@@ -1,8 +1,6 @@
 package application
 
 import (
-	"time"
-
 	log "github.com/sirupsen/logrus"
 
 	"github.com/tdex-network/tdex-feeder/internal/domain"
@@ -54,6 +52,10 @@ func (f *krakenFeedService) GetFeed() domain.Feed {
 func (f *krakenFeedService) Start() {
 	listening := true
 	log.Println("Start listening kraken service")
+	tickerWithPriceChan, err := f.krakenWebSocket.StartListen()
+	if err != nil {
+		log.Fatal(err)
+	}
 	for listening {
 		select {
 		case <-f.stopChan:
@@ -65,20 +67,13 @@ func (f *krakenFeedService) Start() {
 
 			log.Info("Feed service stopped")
 			break;
-		case <-time.After(500 * time.Millisecond):
-			log.Info("Read socket interval")
-			tickerWithPrice, err := f.krakenWebSocket.Read()
-			if (tickerWithPrice != nil) {
-				log.Info("msg =" + string(tickerWithPrice.Ticker))
-			}
-			if err != nil {
-				log.Debug("Read message error: ", err)
-				continue
-			}
+		case tickerWithPrice := <-tickerWithPriceChan:
+			log.Debug("Kraken message = " + string(tickerWithPrice.Ticker))
 
 			market, ok := f.tickersToMarketMap[tickerWithPrice.Ticker]
 			if !ok {
 				log.Debug("Market not found for ticker: ", tickerWithPrice.Ticker)
+				continue
 			}
 
 			f.feed.AddMarketPrice(domain.MarketPrice{
