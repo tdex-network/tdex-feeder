@@ -26,10 +26,7 @@ func NewKrakenFeedService(
 	address string, 
 	tickersToMarketMap map[string]domain.Market,
 ) (FeedService, error) {
-	newFeed, err := domain.NewFeed()
-	if err != nil {
-		return nil, err
-	}
+	newFeed := domain.NewFeed()
 
 	tickersToSubscribe := make([]string, 0)
 	for k := range tickersToMarketMap {
@@ -37,7 +34,7 @@ func NewKrakenFeedService(
 	}
 
 	krakenSocket := ports.NewKrakenWebSocket()
-	err = krakenSocket.Connect(address, tickersToSubscribe)
+	err := krakenSocket.Connect(address, tickersToSubscribe)
 	if err != nil {
 		return nil, err
 	}

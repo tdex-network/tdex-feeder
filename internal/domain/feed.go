@@ -2,8 +2,6 @@ package domain
 
 import (
 	"sync"
-
-	"github.com/google/uuid"
 )
 
 type MarketPrice struct {
@@ -11,26 +9,21 @@ type MarketPrice struct {
 	Price Price
 }
 
+// Feed represents a source of MarketPrice data
 type Feed interface {
 	AddMarketPrice(marketPrice MarketPrice)
 	getMarketPriceChan() <-chan MarketPrice	
 }
 
 type feed struct {
-	id string
 	marketPriceChan chan MarketPrice
 }
 
-func NewFeed() (Feed, error) {
-	uuid, err := uuid.NewUUID()
-	if err != nil {
-		return nil, err
-	}
-
+// NewFeed creates a Feed (i.e an empty channel)
+func NewFeed() Feed {
 	return &feed{
-		id: uuid.String(),
 		marketPriceChan: make(chan MarketPrice),
-	}, nil
+	}
 }
 
 func (f feed) AddMarketPrice(marketPrice MarketPrice) {
