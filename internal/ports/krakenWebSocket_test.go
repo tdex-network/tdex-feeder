@@ -8,7 +8,7 @@ import (
 
 const (
 	address = "ws.kraken.com"
-	ticker = "LTC/USDT"
+	ticker = "XBT/USDT"
 )
 
 func createAndConnect() (KrakenWebSocket, error) {
