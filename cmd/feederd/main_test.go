@@ -32,11 +32,9 @@ func TestFeeder(t *testing.T) {
 	runDaemonAndInitConfigFile(t)
 	t.Cleanup(stopAndDeleteContainer)
 
-	t.Run("should feed the market using kraken feed", func(t *testing.T) {
-		go main()
-		time.Sleep(30 * time.Second)
-		os.Exit(0)
-	})
+	go main()
+	time.Sleep(30 * time.Second)
+	os.Exit(0)
 }
 
 func runDaemonAndInitConfigFile(t *testing.T) {
