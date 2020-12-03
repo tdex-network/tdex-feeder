@@ -27,7 +27,7 @@ interface exposed from tdex-deamon `UpdateMarketPrice`.
 $ feederd
 
 # Run with debug mode and different config path.
-$ TDEX_FEEDER_CONFIG_PATH=./config.json feederd 
+$ FEEDER_CONFIG_PATH=./config.json feederd 
 ```
 
 ## 🖥 Local Development

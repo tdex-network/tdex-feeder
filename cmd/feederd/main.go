@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	envConfigPathKey = "TDEX_FEEDER_CONFIG_PATH"
+	envConfigPathKey = "FEEDER_CONFIG_PATH"
 	defaultConfigPath = "./config.json"
 )
 
