@@ -5,7 +5,6 @@ import (
 	"sync"
 )
 
-
 type TdexFeeder interface {
 	Start() error
 	Stop()
@@ -30,6 +29,8 @@ func NewTdexFeeder(feeds []Feed, targets []Target) TdexFeeder {
 	}
 }
 
+// Start observe all the feeds chan (using merge function)
+// and push the results to all targets
 func (t *tdexFeeder) Start() error {
 	if t.IsRunning() {
 		return errors.New("the feeder is already started")

@@ -26,6 +26,7 @@ func NewFeed() Feed {
 	}
 }
 
+// AddMarketPrice send a new marketPrice value inside the Feed's channel.
 func (f feed) AddMarketPrice(marketPrice MarketPrice) {
 	f.marketPriceChan <- marketPrice
 }
@@ -34,6 +35,7 @@ func (f feed) getMarketPriceChan() <-chan MarketPrice {
 	return f.marketPriceChan
 }
 
+// merge gathers several feeds into a unique channel
 func merge(feeds ...Feed) <-chan MarketPrice {
 	mergedChan := make(chan MarketPrice)
 	var wg sync.WaitGroup
