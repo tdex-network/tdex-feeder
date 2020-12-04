@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"regexp"
+	"time"
 
 	"github.com/tdex-network/tdex-feeder/internal/application"
 	"github.com/tdex-network/tdex-feeder/internal/domain"
@@ -26,6 +27,7 @@ type Config struct {
 	daemonEndpoint  string
 	krakenWSaddress string
 	markets         map[string]domain.Market
+	marketIntervals map[domain.Market]time.Duration
 }
 
 func (config *Config) ToFeederService() application.FeederService {
@@ -54,15 +56,20 @@ func (config *Config) UnmarshalJSON(data []byte) error {
 	config.krakenWSaddress = jsonConfig.KrakenWsEndpoint
 
 	configTickerToMarketMap := make(map[string]domain.Market)
+	marketIntervalsMap := make(map[domain.Market]time.Duration)
 
 	for _, marketJson := range jsonConfig.Markets {
-		configTickerToMarketMap[marketJson.KrakenTicker] = domain.Market{
+		market := domain.Market{
 			BaseAsset:  marketJson.BaseAsset,
 			QuoteAsset: marketJson.QuoteAsset,
 		}
+
+		configTickerToMarketMap[marketJson.KrakenTicker] = market
+		marketIntervalsMap[market] = time.Duration(marketJson.Interval) * time.Millisecond
 	}
 
 	config.markets = configTickerToMarketMap
+	config.marketIntervals = marketIntervalsMap
 
 	return nil
 }
@@ -93,6 +100,10 @@ func (configJson ConfigJson) validate() error {
 		err = validateAssetString(marketJson.QuoteAsset)
 		if err != nil {
 			return err
+		}
+
+		if marketJson.Interval < 0 {
+			return errors.New("interval must be greater (or equal) than 0")
 		}
 	}
 
