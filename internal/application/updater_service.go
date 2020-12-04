@@ -41,18 +41,18 @@ func NewTdexDaemonTarget(
 	}
 
 	for market, interval := range marketToIntervalMap {
-		go func() {
+		go func(duration time.Duration, market domain.Market) {
 			for {
 				select {
 				case <-tdexTarget.closeChan:
 					log.Info("Stop the tdex updater")
 					break
-				case <-time.After(interval):
+				case <-time.After(duration):
 					tdexTarget.updatePrice(market)
 					continue
 				}
 			}
-		}()
+		}(interval, market)
 	}
 
 	return tdexTarget

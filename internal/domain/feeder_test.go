@@ -8,27 +8,27 @@ import (
 )
 
 func TestFeeder(t *testing.T) {
-	feed := NewFeed() 
-	feedBis := NewFeed() 
+	feed := NewFeed()
+	feedBis := NewFeed()
 
 	target := &mockTarget{
 		marketPrices: make([]MarketPrice, 0),
 	}
 
 	feeder := NewTdexFeeder([]Feed{feed, feedBis}, []Target{target})
-	
+
 	marketPrice := MarketPrice{
 		Market: Market{
-			BaseAsset: "1111",
+			BaseAsset:  "1111",
 			QuoteAsset: "0000",
 		},
-		Price: Price{ 
-			BasePrice: 0.2,
+		Price: Price{
+			BasePrice:  0.2,
 			QuotePrice: 1,
 		},
 	}
 
-	go func ()  {
+	go func() {
 		err := feeder.Start()
 		if err != nil {
 			t.Error(err)
@@ -37,16 +37,16 @@ func TestFeeder(t *testing.T) {
 
 	time.Sleep(time.Second)
 	assert.Equal(t, true, feeder.IsRunning())
-	
-	go func ()  {
+
+	go func() {
 		for i := 0; i < 5; i++ {
 			feedBis.AddMarketPrice(marketPrice)
-		}	
+		}
 	}()
 
 	for i := 0; i < 10; i++ {
 		feed.AddMarketPrice(marketPrice)
-	}	
+	}
 
 	time.Sleep(500 * time.Millisecond)
 	feeder.Stop()
@@ -61,4 +61,3 @@ type mockTarget struct {
 func (t *mockTarget) Push(marketPrice MarketPrice) {
 	t.marketPrices = append(t.marketPrices, marketPrice)
 }
-

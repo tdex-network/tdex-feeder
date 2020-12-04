@@ -6,13 +6,13 @@ import (
 
 type MarketPrice struct {
 	Market Market
-	Price Price
+	Price  Price
 }
 
 // Feed represents a source of MarketPrice data
 type Feed interface {
 	AddMarketPrice(marketPrice MarketPrice)
-	getMarketPriceChan() <-chan MarketPrice	
+	getMarketPriceChan() <-chan MarketPrice
 }
 
 type feed struct {
@@ -45,12 +45,12 @@ func merge(feeds ...Feed) <-chan MarketPrice {
 		c := feed.getMarketPriceChan()
 		go func(c <-chan MarketPrice) {
 			for marketPrice := range c {
-                mergedChan <- marketPrice
-            }
+				mergedChan <- marketPrice
+			}
 			wg.Done()
 		}(c)
 	}
-	
+
 	go func() {
 		wg.Wait()
 		close(mergedChan)

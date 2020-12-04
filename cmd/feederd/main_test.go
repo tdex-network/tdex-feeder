@@ -16,12 +16,12 @@ import (
 )
 
 const (
-	containerName = "tdexFeederContainerTest"
-	daemonEndpoint = "127.0.0.1:9000"
+	containerName    = "tdexFeederContainerTest"
+	daemonEndpoint   = "127.0.0.1:9000"
 	krakenWsEndpoint = "ws.kraken.com"
 	// nigiriUrl = "https://nigiri.network/liquid/api"
 	nigiriUrl = "http://localhost:3001"
-	password = "vulpemsecret"
+	password  = "vulpemsecret"
 )
 
 func TestFeeder(t *testing.T) {
@@ -41,13 +41,14 @@ func runDaemonAndInitConfigFile(t *testing.T) {
 	usdt := runDaemonAndCreateMarket(t)
 
 	configJson := adapters.ConfigJson{
-		DaemonEndpoint: daemonEndpoint,
+		DaemonEndpoint:   daemonEndpoint,
 		KrakenWsEndpoint: krakenWsEndpoint,
 		Markets: []adapters.MarketJson{
 			adapters.MarketJson{
 				KrakenTicker: "LTC/USDT",
-				BaseAsset: "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225",
-				QuoteAsset: usdt,
+				BaseAsset:    "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225",
+				QuoteAsset:   usdt,
+				Interval:     500,
 			},
 		},
 	}
@@ -70,7 +71,7 @@ func runDaemonAndCreateMarket(t *testing.T) string {
 		"-d",
 		"-v", "tdexd:/.tdex-daemon",
 		"-e", "TDEX_NETWORK=regtest",
-		"-e", "TDEX_EXPLORER_ENDPOINT=" + nigiriUrl,
+		"-e", "TDEX_EXPLORER_ENDPOINT="+nigiriUrl,
 		"-e", "TDEX_FEE_ACCOUNT_BALANCE_TRESHOLD=1000",
 		"-e", "TDEX_BASE_ASSET=5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225",
 		"-e", "TDEX_LOG_LEVEL=5",
@@ -119,7 +120,7 @@ func runDaemonAndCreateMarket(t *testing.T) string {
 
 	address := depositMarketResult["address"].(string)
 	usdt := fundMarketAddress(t, address)
-	
+
 	return usdt
 }
 
@@ -200,7 +201,6 @@ func faucet(address string) (string, error) {
 
 	return respBody["txId"], nil
 }
-
 
 func execute(command string, args ...string) (string, error) {
 	cmd := exec.Command(command, args...)

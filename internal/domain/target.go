@@ -1,5 +1,5 @@
 package domain
 
 type Target interface {
-	Push(marketPrice MarketPrice) 
+	Push(marketPrice MarketPrice)
 }

@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	envConfigPathKey = "FEEDER_CONFIG_PATH"
+	envConfigPathKey  = "FEEDER_CONFIG_PATH"
 	defaultConfigPath = "./config.json"
 )
 
@@ -31,9 +31,8 @@ func main() {
 	}
 	feeder := configFileToFeederService(envConfigPath)
 
-
 	log.Info("Start the feeder")
-	go func ()  {
+	go func() {
 		err := feeder.Start()
 		if err != nil {
 			log.Fatal(err)
@@ -72,4 +71,3 @@ func configFileToFeederService(configFilePath string) application.FeederService 
 	feeder := config.ToFeederService()
 	return feeder
 }
-

@@ -14,13 +14,13 @@ type KrakenWebSocket interface {
 }
 
 type krakenWebSocket struct {
-	krakenWS *ws.Client
+	krakenWS            *ws.Client
 	tickerWithPriceChan chan TickerWithPrice
 }
 
 func NewKrakenWebSocket() KrakenWebSocket {
 	return &krakenWebSocket{
-		krakenWS: ws.New(),
+		krakenWS:            ws.New(),
 		tickerWithPriceChan: make(chan TickerWithPrice),
 	}
 }
@@ -67,7 +67,7 @@ func (socket *krakenWebSocket) StartListen() (chan TickerWithPrice, error) {
 				if ok {
 					result := TickerWithPrice{
 						Ticker: tickerUpdate.Pair,
-						Price: tickerUpdate.Close.Today.(float64),
+						Price:  tickerUpdate.Close.Today.(float64),
 					}
 					socket.tickerWithPriceChan <- result
 				}

@@ -8,20 +8,20 @@ import (
 )
 
 type FeedService interface {
-	Start() 
+	Start()
 	Stop()
 	GetFeed() domain.Feed
 }
 
 type krakenFeedService struct {
-	feed domain.Feed
-	krakenWebSocket ports.KrakenWebSocket
-	stopChan chan bool
+	feed               domain.Feed
+	krakenWebSocket    ports.KrakenWebSocket
+	stopChan           chan bool
 	tickersToMarketMap map[string]domain.Market
 }
 
 func NewKrakenFeedService(
-	address string, 
+	address string,
 	tickersToMarketMap map[string]domain.Market,
 ) (FeedService, error) {
 	newFeed := domain.NewFeed()
@@ -36,11 +36,11 @@ func NewKrakenFeedService(
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &krakenFeedService{
-		krakenWebSocket: krakenSocket,
-		feed: newFeed,
-		stopChan: make(chan bool),
+		krakenWebSocket:    krakenSocket,
+		feed:               newFeed,
+		stopChan:           make(chan bool),
 		tickersToMarketMap: tickersToMarketMap,
 	}, nil
 }
@@ -66,7 +66,7 @@ func (f *krakenFeedService) Start() {
 			}
 
 			log.Info("Feed service stopped")
-			break;
+			break
 		case tickerWithPrice := <-tickerWithPriceChan:
 			log.Debug("Kraken message = " + string(tickerWithPrice.Ticker))
 
@@ -79,7 +79,7 @@ func (f *krakenFeedService) Start() {
 			f.feed.AddMarketPrice(domain.MarketPrice{
 				Market: market,
 				Price: domain.Price{
-					BasePrice: 1 / float32(tickerWithPrice.Price),
+					BasePrice:  1 / float32(tickerWithPrice.Price),
 					QuotePrice: float32(tickerWithPrice.Price),
 				},
 			})

@@ -44,14 +44,14 @@ func (updater *tdexDaemonPriceUpdater) UpdateMarketPrice(ctx context.Context, ma
 	}
 
 	args := pboperator.UpdateMarketPriceRequest{
-		Market: &types.Market{ 
-			BaseAsset: marketPrice.Market.BaseAsset,
+		Market: &types.Market{
+			BaseAsset:  marketPrice.Market.BaseAsset,
 			QuoteAsset: marketPrice.Market.QuoteAsset,
-		 },
-		 Price: &types.Price{
-			 BasePrice: marketPrice.Price.BasePrice,
-			 QuotePrice: marketPrice.Price.BasePrice,
-		 },
+		},
+		Price: &types.Price{
+			BasePrice:  marketPrice.Price.BasePrice,
+			QuotePrice: marketPrice.Price.BasePrice,
+		},
 	}
 
 	_, err := updater.clientGRPC.UpdateMarketPrice(ctx, &args)

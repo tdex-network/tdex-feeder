@@ -1,6 +1,6 @@
 package domain
 
 type Market struct {
-	BaseAsset string
+	BaseAsset  string
 	QuoteAsset string
 }

@@ -12,20 +12,20 @@ type TdexFeeder interface {
 }
 
 type tdexFeeder struct {
-	feeds []Feed
-	targets []Target
+	feeds    []Feed
+	targets  []Target
 	stopChan chan bool
-	running bool
-	locker sync.Locker
+	running  bool
+	locker   sync.Locker
 }
 
 func NewTdexFeeder(feeds []Feed, targets []Target) TdexFeeder {
 	return &tdexFeeder{
-		feeds: feeds,
-		targets: targets,
+		feeds:    feeds,
+		targets:  targets,
 		stopChan: make(chan bool),
-		running: false,
-		locker: &sync.Mutex{},
+		running:  false,
+		locker:   &sync.Mutex{},
 	}
 }
 
@@ -43,7 +43,7 @@ func (t *tdexFeeder) Start() error {
 		select {
 		case <-t.stopChan:
 			t.running = false
-			break;
+			break
 		case marketPrice := <-marketPriceChannel:
 			for _, target := range t.targets {
 				target.Push(marketPrice)
@@ -63,6 +63,3 @@ func (t *tdexFeeder) IsRunning() bool {
 	defer t.locker.Unlock()
 	return t.running
 }
-
-
-
