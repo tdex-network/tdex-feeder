@@ -58,8 +58,7 @@ type mockTarget struct {
 	marketPrices []MarketPrice
 }
 
-func (t *mockTarget) Push(marketPrice MarketPrice) error {
+func (t *mockTarget) Push(marketPrice MarketPrice) {
 	t.marketPrices = append(t.marketPrices, marketPrice)
-	return nil
 }
 

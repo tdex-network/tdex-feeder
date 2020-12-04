@@ -13,25 +13,26 @@ type MarketJson struct {
 	BaseAsset    string `json:"base_asset"`
 	QuoteAsset   string `json:"quote_asset"`
 	KrakenTicker string `json:"kraken_ticker"`
+	Interval     int    `json:"interval"`
 }
 
-type ConfigJson struct { 
-	DaemonEndpoint   string   `json:"daemon_endpoint"`
-	KrakenWsEndpoint string   `json:"kraken_ws_endpoint"`
+type ConfigJson struct {
+	DaemonEndpoint   string       `json:"daemon_endpoint"`
+	KrakenWsEndpoint string       `json:"kraken_ws_endpoint"`
 	Markets          []MarketJson `json:"markets"`
 }
 
-type Config struct { 
-	daemonEndpoint string
+type Config struct {
+	daemonEndpoint  string
 	krakenWSaddress string
-	markets map[string]domain.Market
+	markets         map[string]domain.Market
 }
 
 func (config *Config) ToFeederService() application.FeederService {
 	feederSvc := application.NewFeederService(application.NewFeederServiceArgs{
-		KrakenWSaddress: config.krakenWSaddress,
+		KrakenWSaddress:  config.krakenWSaddress,
 		OperatorEndpoint: config.daemonEndpoint,
-		TickerToMarket: config.markets,
+		TickerToMarket:   config.markets,
 	})
 
 	return feederSvc
@@ -56,7 +57,7 @@ func (config *Config) UnmarshalJSON(data []byte) error {
 
 	for _, marketJson := range jsonConfig.Markets {
 		configTickerToMarketMap[marketJson.KrakenTicker] = domain.Market{
-			BaseAsset: marketJson.BaseAsset,
+			BaseAsset:  marketJson.BaseAsset,
 			QuoteAsset: marketJson.QuoteAsset,
 		}
 	}
@@ -89,7 +90,7 @@ func (configJson ConfigJson) validate() error {
 			return err
 		}
 
-		err = validateAssetString(marketJson.QuoteAsset) 
+		err = validateAssetString(marketJson.QuoteAsset)
 		if err != nil {
 			return err
 		}
@@ -99,7 +100,7 @@ func (configJson ConfigJson) validate() error {
 }
 
 func validateAssetString(asset string) error {
-	const regularExpression = `[0-9A-Fa-f]{64}`	
+	const regularExpression = `[0-9A-Fa-f]{64}`
 
 	matched, err := regexp.Match(regularExpression, []byte(asset))
 	if err != nil {
