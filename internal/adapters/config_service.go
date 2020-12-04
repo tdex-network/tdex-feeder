@@ -35,6 +35,7 @@ func (config *Config) ToFeederService() application.FeederService {
 		KrakenWSaddress:  config.krakenWSaddress,
 		OperatorEndpoint: config.daemonEndpoint,
 		TickerToMarket:   config.markets,
+		MarketToInterval: config.marketIntervals,
 	})
 
 	return feederSvc

@@ -1,6 +1,8 @@
 package application
 
 import (
+	"time"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/tdex-network/tdex-feeder/internal/domain"
 )
@@ -11,18 +13,20 @@ type FeederService interface {
 }
 
 type feederService struct {
-	tdexFeeder domain.TdexFeeder
+	tdexFeeder    domain.TdexFeeder
 	krakenService FeedService
+	target        *TdexDaemonTarget
 }
 
 type NewFeederServiceArgs struct {
 	OperatorEndpoint string
-	KrakenWSaddress string
-	TickerToMarket map[string]domain.Market
+	MarketToInterval map[domain.Market]time.Duration
+	KrakenWSaddress  string
+	TickerToMarket   map[string]domain.Market
 }
 
 func NewFeederService(args NewFeederServiceArgs) FeederService {
-	target := NewTdexDaemonTarget(args.OperatorEndpoint)
+	target := NewTdexDaemonTarget(args.OperatorEndpoint, args.MarketToInterval)
 	krakenFeedService, err := NewKrakenFeedService(args.KrakenWSaddress, args.TickerToMarket)
 	if err != nil {
 		log.Fatal(err)
@@ -31,8 +35,9 @@ func NewFeederService(args NewFeederServiceArgs) FeederService {
 	feeder := domain.NewTdexFeeder([]domain.Feed{krakenFeedService.GetFeed()}, []domain.Target{target})
 
 	return &feederService{
-		tdexFeeder: feeder,
+		tdexFeeder:    feeder,
 		krakenService: krakenFeedService,
+		target:        target.(*TdexDaemonTarget),
 	}
 }
 
@@ -44,6 +49,7 @@ func (feeder *feederService) Start() error {
 
 func (feeder *feederService) Stop() error {
 	feeder.krakenService.Stop()
+	feeder.target.Stop()
 	feeder.tdexFeeder.Stop()
-	return nil	
+	return nil
 }
