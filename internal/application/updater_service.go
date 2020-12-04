@@ -2,24 +2,84 @@ package application
 
 import (
 	"context"
+	"sync"
+	"time"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/tdex-network/tdex-feeder/internal/domain"
 	"github.com/tdex-network/tdex-feeder/internal/ports"
 )
 
-// Implements the domain.Target interface
+// Implements the domain.Target interface and manage interval for each market
 type TdexDaemonTarget struct {
-	Endpoint string
-	priceUpdater ports.TdexDaemonPriceUpdater
+	Endpoint           string
+	priceUpdater       ports.TdexDaemonPriceUpdater
+	priceUpdaterLocker *sync.RWMutex
+	marketsToUpdate    map[domain.Market]domain.Price
+	closeChan          chan bool
 }
 
-func NewTdexDaemonTarget(tdexDaemonOperatorInterfaceEnpoint string) domain.Target {
-	return &TdexDaemonTarget{
-		Endpoint: tdexDaemonOperatorInterfaceEnpoint,
-		priceUpdater: ports.NewTdexDaemonPriceUpdater(context.Background(), tdexDaemonOperatorInterfaceEnpoint),
+// NewTdexDaemonTarget configure a tdexDaemonUpdater using the endpoint
+// and start goroutines depending of the configured intervals for each market.
+func NewTdexDaemonTarget(
+	tdexDaemonOperatorInterfaceEnpoint string,
+	marketToIntervalMap map[domain.Market]time.Duration,
+) domain.Target {
+	now := time.Now()
+	mapLastSent := make(map[domain.Market]time.Time)
+
+	for market := range marketToIntervalMap {
+		mapLastSent[market] = now
 	}
+
+	tdexTarget := &TdexDaemonTarget{
+		Endpoint:           tdexDaemonOperatorInterfaceEnpoint,
+		priceUpdater:       ports.NewTdexDaemonPriceUpdater(context.Background(), tdexDaemonOperatorInterfaceEnpoint),
+		priceUpdaterLocker: &sync.RWMutex{},
+		closeChan:          make(chan bool, 1),
+		marketsToUpdate:    make(map[domain.Market]domain.Price),
+	}
+
+	for market, interval := range marketToIntervalMap {
+		go func() {
+			for {
+				select {
+				case <-tdexTarget.closeChan:
+					log.Info("Stop the tdex updater")
+					break
+				case <-time.After(interval):
+					tdexTarget.updatePrice(market)
+					continue
+				}
+			}
+		}()
+	}
+
+	return tdexTarget
 }
 
-func (daemon *TdexDaemonTarget) Push(marketPrice domain.MarketPrice) error {
-	return daemon.priceUpdater.UpdateMarketPrice(context.Background(), marketPrice)
+func (daemon *TdexDaemonTarget) Push(marketPrice domain.MarketPrice) {
+	daemon.priceUpdaterLocker.Lock()
+	defer daemon.priceUpdaterLocker.Unlock()
+
+	daemon.marketsToUpdate[marketPrice.Market] = marketPrice.Price
+}
+
+func (daemon *TdexDaemonTarget) Stop() {
+	daemon.closeChan <- true
+}
+
+func (daemon *TdexDaemonTarget) updatePrice(market domain.Market) {
+	daemon.priceUpdaterLocker.RLock()
+	defer daemon.priceUpdaterLocker.RUnlock()
+
+	price, ok := daemon.marketsToUpdate[market]
+	if ok {
+		err := daemon.priceUpdater.UpdateMarketPrice(context.Background(), domain.MarketPrice{Market: market, Price: price})
+		if err != nil {
+			log.Error("error updatePrice: ", err)
+			return
+		}
+		delete(daemon.marketsToUpdate, market)
+	}
 }

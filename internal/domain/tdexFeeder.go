@@ -46,10 +46,7 @@ func (t *tdexFeeder) Start() error {
 			break;
 		case marketPrice := <-marketPriceChannel:
 			for _, target := range t.targets {
-				err := target.Push(marketPrice)
-				if err != nil {
-					panic(err)
-				}
+				target.Push(marketPrice)
 			}
 		}
 	}
