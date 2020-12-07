@@ -83,4 +83,5 @@ markets: Json List with necessary markets informations. Required.
   base_asset: String of the Hash of the base asset for gRPC request. Required.
   quote_asset: String of the Hash of the quote asset for gRPC request. Required.
   kraken_ticker: String with the ticker we want kraken to provide informations on. Required.
+  interval: the minimum time in milliseconds between two updateMarketPrice requests. Required. 
 ```
