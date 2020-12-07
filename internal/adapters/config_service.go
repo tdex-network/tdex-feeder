@@ -2,7 +2,6 @@ package adapters
 
 import (
 	"encoding/json"
-	"errors"
 	"regexp"
 	"time"
 
@@ -77,20 +76,20 @@ func (config *Config) UnmarshalJSON(data []byte) error {
 
 func (configJson ConfigJson) validate() error {
 	if configJson.DaemonEndpoint == "" {
-		return errors.New("daemon endpoint is empty")
+		return ErrDaemonEndpointIsEmpty
 	}
 
 	if configJson.KrakenWsEndpoint == "" {
-		return errors.New("kraken websocket endpoint is empty")
+		return ErrKrakenEndpointIsEmpty
 	}
 
 	if len(configJson.Markets) == 0 {
-		return errors.New("need at least 1 market to feed")
+		return ErrNeedAtLeastOneMarketToFeed
 	}
 
 	for _, marketJson := range configJson.Markets {
 		if marketJson.KrakenTicker == "" {
-			return errors.New("krakenTicker is empty")
+			return ErrKrakenTickerIsEmpty
 		}
 
 		err := validateAssetString(marketJson.BaseAsset)
@@ -104,7 +103,7 @@ func (configJson ConfigJson) validate() error {
 		}
 
 		if marketJson.Interval < 0 {
-			return errors.New("interval must be greater (or equal) than 0")
+			return ErrIntervalIsNotPositiveNumber
 		}
 	}
 
@@ -120,7 +119,7 @@ func validateAssetString(asset string) error {
 	}
 
 	if !matched {
-		return errors.New(asset + " is an invalid asset string.")
+		return ErrInvalidAssetHash{asset: asset}.Error()
 	}
 
 	return nil
