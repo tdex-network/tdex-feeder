@@ -45,10 +45,8 @@ func NewKrakenFeedService(
 	}, nil
 }
 
-func (f *krakenFeedService) GetFeed() domain.Feed {
-	return f.feed
-}
-
+// Start is the main function of krakenFeedService
+// when start, the services is listening for new data from kraken server
 func (f *krakenFeedService) Start() {
 	listening := true
 	log.Println("Start listening kraken service")
@@ -87,6 +85,12 @@ func (f *krakenFeedService) Start() {
 	}
 }
 
+// Stop just send data to the stopChan in order to stop listening from kraken web socket
 func (f *krakenFeedService) Stop() {
 	f.stopChan <- true
+}
+
+// GetFeed is a getter function for kraken's feed member
+func (f *krakenFeedService) GetFeed() domain.Feed {
+	return f.feed
 }

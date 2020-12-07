@@ -25,6 +25,7 @@ func NewKrakenWebSocket() KrakenWebSocket {
 	}
 }
 
+// Connect method will connect to the websocket kraken server, ping it and subscribe to tickers threads.
 func (socket *krakenWebSocket) Connect(address string, tickersToSubscribe []string) error {
 	// connect to server
 	err := socket.krakenWS.Connect()
@@ -43,12 +44,6 @@ func (socket *krakenWebSocket) Connect(address string, tickersToSubscribe []stri
 		return err
 	}
 
-	return nil
-}
-
-func (socket *krakenWebSocket) Close() error {
-	socket.krakenWS.Close()
-	socket.krakenWS = nil
 	return nil
 }
 
@@ -76,4 +71,10 @@ func (socket *krakenWebSocket) StartListen() (chan TickerWithPrice, error) {
 	}()
 
 	return socket.tickerWithPriceChan, nil
+}
+
+func (socket *krakenWebSocket) Close() error {
+	socket.krakenWS.Close()
+	socket.krakenWS = nil
+	return nil
 }

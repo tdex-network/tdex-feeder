@@ -31,10 +31,6 @@ func (f feed) AddMarketPrice(marketPrice MarketPrice) {
 	f.marketPriceChan <- marketPrice
 }
 
-func (f feed) getMarketPriceChan() <-chan MarketPrice {
-	return f.marketPriceChan
-}
-
 // merge gathers several feeds into a unique channel
 func merge(feeds ...Feed) <-chan MarketPrice {
 	mergedChan := make(chan MarketPrice)
@@ -57,4 +53,8 @@ func merge(feeds ...Feed) <-chan MarketPrice {
 	}()
 
 	return mergedChan
+}
+
+func (f feed) getMarketPriceChan() <-chan MarketPrice {
+	return f.marketPriceChan
 }

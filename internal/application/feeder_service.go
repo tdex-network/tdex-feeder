@@ -27,12 +27,16 @@ type NewFeederServiceArgs struct {
 
 func NewFeederService(args NewFeederServiceArgs) FeederService {
 	target := NewTdexDaemonTarget(args.OperatorEndpoint, args.MarketToInterval)
+
 	krakenFeedService, err := NewKrakenFeedService(args.KrakenWSaddress, args.TickerToMarket)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	feeder := domain.NewTdexFeeder([]domain.Feed{krakenFeedService.GetFeed()}, []domain.Target{target})
+	feeder := domain.NewTdexFeeder(
+		[]domain.Feed{krakenFeedService.GetFeed()},
+		[]domain.Target{target},
+	)
 
 	return &feederService{
 		tdexFeeder:    feeder,

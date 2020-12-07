@@ -58,6 +58,8 @@ func NewTdexDaemonTarget(
 	return tdexTarget
 }
 
+// Push is a method of the Target interface
+// The tdexDaemonTarget stores the marketPrice in a local cache.
 func (daemon *TdexDaemonTarget) Push(marketPrice domain.MarketPrice) {
 	daemon.priceUpdaterLocker.Lock()
 	defer daemon.priceUpdaterLocker.Unlock()
@@ -65,6 +67,7 @@ func (daemon *TdexDaemonTarget) Push(marketPrice domain.MarketPrice) {
 	daemon.marketsToUpdate[marketPrice.Market] = marketPrice.Price
 }
 
+// Stop is used to stop all the goroutines launched in NewTdexDaemonTarget
 func (daemon *TdexDaemonTarget) Stop() {
 	daemon.closeChan <- true
 }

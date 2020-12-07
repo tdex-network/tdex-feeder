@@ -33,8 +33,8 @@ type tdexDaemonPriceUpdater struct {
 	clientGRPC pboperator.OperatorClient
 }
 
+// UpdateMarketPrice gets a marketPrice and sends updateMarketPrice request through gRPC client.
 func (updater *tdexDaemonPriceUpdater) UpdateMarketPrice(ctx context.Context, marketPrice domain.MarketPrice) error {
-
 	if marketPrice.Price.BasePrice == 0.00 {
 		return errors.New("Base price is 0.00")
 	}
