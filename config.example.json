@@ -1,13 +1,10 @@
 {
-  "daemon_endpoint": "localhost:9000",
-  "daemon_macaroon": "string",
-  "kraken_ws_endpoint": "ws.kraken.com",
-  "markets": [
-    {
-      "base_asset": "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225",
-      "quote_asset": "691e6b9e00cb75f6383f2581ef001f2695074746e213d21771dff5a890f21104",
-      "kraken_ticker": "XBT/USD",
-      "interval": 10
-    }
-  ]
+    "daemon_endpoint":"127.0.0.1:9000",
+    "kraken_ws_endpoint":"ws.kraken.com",
+    "markets":[{ 
+        "base_asset":"5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225",
+        "quote_asset":"e3ec88b0ed9228c3337f746f5d9ea20c1e68bbe1f73d94621c1e8452bebb9e22",
+        "kraken_ticker":"LTC/USDT",
+        "interval":500
+    }]
 }
