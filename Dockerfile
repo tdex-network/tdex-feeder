@@ -8,7 +8,7 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o feederd-linux cmd/feederd/main.go
+RUN GOOS=linux GOARCH=amd64 go build -o feederd-linux cmd/feederd/main.go
 
 WORKDIR /build
 
@@ -20,4 +20,4 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 
 COPY --from=builder /build/ /
 
-CMD ["/feederd-linux","-debug","-conf=./data/config.json"]
+CMD ["/feederd-linux"]

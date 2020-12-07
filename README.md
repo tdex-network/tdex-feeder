@@ -42,7 +42,7 @@ Build and use `feederd` with docker.
 
 At the root of the repository
 ```
-docker build -t tdex-feederd .
+docker build --pull --rm -f 'Dockerfile' -t feederd:latest . 
 ```
 
 #### Run the daemon
@@ -50,9 +50,11 @@ docker build -t tdex-feederd .
 Create a [config.json](#config-file) file 
 and run the following command in the same folder:
 ```
-docker run -it -d --net=host -v $PWD/config.json:/data/config.json tdex-feederd
+docker run -it --name feederd -v $HOME/config.json:/config.json --network="host" feederd
 ```
-`--net=host` in case you're running tdex-deamon locally
+the `$HOME/config.json` is the path to the feederd configuration file. 
+
+> `--net=host` in case you're running tdex-deamon locally
 
 ### Build it yourself
 

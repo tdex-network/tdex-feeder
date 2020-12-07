@@ -16,6 +16,7 @@ type TdexDaemonPriceUpdater interface {
 	UpdateMarketPrice(ctx context.Context, marketPrice domain.MarketPrice) error
 }
 
+// NewTdexDaemonPriceUpdater uses the operatorInterfaceEndpoint to create a gRPC client.
 func NewTdexDaemonPriceUpdater(ctx context.Context, operatorInterfaceEndpoint string) TdexDaemonPriceUpdater {
 	connGrpc, err := connectToGRPC(ctx, operatorInterfaceEndpoint)
 	if err != nil {
