@@ -12,6 +12,6 @@ type ErrInvalidAssetHash struct {
 	asset string
 }
 
-func (e ErrInvalidAssetHash) Error() error {
-	return errors.New("the string '" + e.asset + "' is an invalid asset string.")
+func (e ErrInvalidAssetHash) Error() string {
+	return "the string '" + e.asset + "' is an invalid asset string."
 }

@@ -119,7 +119,7 @@ func validateAssetString(asset string) error {
 	}
 
 	if !matched {
-		return ErrInvalidAssetHash{asset: asset}.Error()
+		return ErrInvalidAssetHash{asset: asset}
 	}
 
 	return nil
