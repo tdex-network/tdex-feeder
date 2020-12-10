@@ -14,7 +14,7 @@ import (
 type TdexDaemonTarget struct {
 	Endpoint           string
 	priceUpdater       ports.TdexDaemonPriceUpdater
-	priceUpdaterLocker *sync.RWMutex
+	priceUpdaterLocker sync.Locker
 	marketsToUpdate    map[domain.Market]domain.Price
 	closeChan          chan bool
 }
@@ -35,7 +35,7 @@ func NewTdexDaemonTarget(
 	tdexTarget := &TdexDaemonTarget{
 		Endpoint:           tdexDaemonOperatorInterfaceEnpoint,
 		priceUpdater:       ports.NewTdexDaemonPriceUpdater(context.Background(), tdexDaemonOperatorInterfaceEnpoint),
-		priceUpdaterLocker: &sync.RWMutex{},
+		priceUpdaterLocker: &sync.Mutex{},
 		closeChan:          make(chan bool, 1),
 		marketsToUpdate:    make(map[domain.Market]domain.Price),
 	}
@@ -73,8 +73,8 @@ func (daemon *TdexDaemonTarget) Stop() {
 }
 
 func (daemon *TdexDaemonTarget) updatePrice(market domain.Market) {
-	daemon.priceUpdaterLocker.RLock()
-	defer daemon.priceUpdaterLocker.RUnlock()
+	daemon.priceUpdaterLocker.Lock()
+	defer daemon.priceUpdaterLocker.Unlock()
 
 	price, ok := daemon.marketsToUpdate[market]
 	if ok {

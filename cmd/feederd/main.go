@@ -24,7 +24,7 @@ func main() {
 	// retrieve feeder service from config file
 	feeder := configFileToFeederService(config.GetConfigPath())
 
-	log.Info("Start the feeder")
+	log.Info("Start the feeder...")
 	go func() {
 		err := feeder.Start()
 		if err != nil {
@@ -34,7 +34,7 @@ func main() {
 
 	// check for interupt
 	<-interrupt
-	log.Info("Shutting down the feeder")
+	log.Info("Shutting down the feeder...")
 	err := feeder.Stop()
 	log.Info("Feeder service stopped")
 	if err != nil {

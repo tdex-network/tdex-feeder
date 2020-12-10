@@ -4,6 +4,7 @@ import (
 	"errors"
 	"sync"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/tdex-network/tdex-feeder/internal/domain"
 )
 
@@ -47,8 +48,10 @@ func (t *tdexFeeder) Start() error {
 			t.running = false
 			break
 		case marketPrice := <-marketPriceChannel:
-			for _, target := range t.targets {
+			log.Info("New market price: Market = ", marketPrice.Market, " | Price = ", marketPrice.Price)
+			for index, target := range t.targets {
 				target.Push(marketPrice)
+				log.Debug("Pushed to target ", index)
 			}
 		}
 	}

@@ -49,7 +49,7 @@ func NewKrakenFeedService(
 // when start, the services is listening for new data from kraken server
 func (f *krakenFeedService) Start() {
 	listening := true
-	log.Println("Start listening kraken service")
+	log.Info("Kraken web socket feed is listening")
 	tickerWithPriceChan, err := f.krakenWebSocket.StartListen()
 	if err != nil {
 		log.Fatal(err)
@@ -63,10 +63,10 @@ func (f *krakenFeedService) Start() {
 				log.Fatal(err)
 			}
 
-			log.Info("Feed service stopped")
+			log.Info("Kraken web socket feed stopped")
 			break
 		case tickerWithPrice := <-tickerWithPriceChan:
-			log.Debug("Kraken message = " + string(tickerWithPrice.Ticker))
+			log.Debug("Kraken web socket receive message = " + string(tickerWithPrice.Ticker))
 
 			market, ok := f.tickersToMarketMap[tickerWithPrice.Ticker]
 			if !ok {
