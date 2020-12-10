@@ -11,13 +11,9 @@ import (
 	"syscall"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/tdex-network/tdex-feeder/config"
 	"github.com/tdex-network/tdex-feeder/internal/adapters"
 	"github.com/tdex-network/tdex-feeder/internal/application"
-)
-
-const (
-	envConfigPathKey  = "FEEDER_CONFIG_PATH"
-	defaultConfigPath = "./config.json"
 )
 
 func main() {
@@ -26,11 +22,7 @@ func main() {
 	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 
 	// retrieve feeder service from config file
-	envConfigPath := os.Getenv(envConfigPathKey)
-	if envConfigPath == "" {
-		envConfigPath = defaultConfigPath
-	}
-	feeder := configFileToFeederService(envConfigPath)
+	feeder := configFileToFeederService(config.GetConfigPath())
 
 	log.Info("Start the feeder")
 	go func() {

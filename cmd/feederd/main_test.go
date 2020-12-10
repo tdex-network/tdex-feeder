@@ -12,11 +12,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/tdex-network/tdex-feeder/config"
 	"github.com/tdex-network/tdex-feeder/internal/adapters"
 )
 
 const (
-	containerName    = "tdexFeederContainerTest"
+	containerName    = "tdexd-feeder-test"
 	daemonEndpoint   = "127.0.0.1:9000"
 	krakenWsEndpoint = "ws.kraken.com"
 	// nigiriUrl = "https://nigiri.network/liquid/api"
@@ -58,7 +59,7 @@ func runDaemonAndInitConfigFile(t *testing.T) {
 		t.Error(err)
 	}
 
-	err = ioutil.WriteFile(defaultConfigPath, bytes, os.ModePerm)
+	err = ioutil.WriteFile(config.GetConfigPath(), bytes, os.ModePerm)
 	if err != nil {
 		t.Error(err)
 	}
