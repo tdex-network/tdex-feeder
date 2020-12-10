@@ -41,10 +41,12 @@ help:
 
 ## run-linux: Run locally with default configuration
 run-linux: clean build-linux
+	export FEEDER_LOG_LEVEL=5; \
 	./build/feederd-linux-amd64
 
 ## run-mac: Run locally with default configuration
 run-mac: clean build-mac
+	export FEEDER_LOG_LEVEL=5; \
 	./build/feederd-darwin-amd64
 
 ## vet: code analysis
@@ -60,4 +62,6 @@ shorttest:
 	go test -v -count=1 -race -short ./...
 
 integrationtest:
+	export FEEDER_CONFIG_PATH="./config.test.json"; \
+	export FEEDER_LOG_LEVEL=5; \
 	go test -v -count=1 ./cmd/feederd
