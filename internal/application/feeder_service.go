@@ -13,7 +13,7 @@ type FeederService interface {
 }
 
 type feederService struct {
-	tdexFeeder    domain.TdexFeeder
+	tdexFeeder    TdexFeeder
 	krakenService FeedService
 	target        *TdexDaemonTarget
 }
@@ -33,7 +33,7 @@ func NewFeederService(args NewFeederServiceArgs) FeederService {
 		log.Fatal(err)
 	}
 
-	feeder := domain.NewTdexFeeder(
+	feeder := NewTdexFeeder(
 		[]domain.Feed{krakenFeedService.GetFeed()},
 		[]domain.Target{target},
 	)

@@ -1,8 +1,10 @@
-package domain
+package application
 
 import (
 	"errors"
 	"sync"
+
+	"github.com/tdex-network/tdex-feeder/internal/domain"
 )
 
 type TdexFeeder interface {
@@ -12,14 +14,14 @@ type TdexFeeder interface {
 }
 
 type tdexFeeder struct {
-	feeds    []Feed
-	targets  []Target
+	feeds    []domain.Feed
+	targets  []domain.Target
 	stopChan chan bool
 	running  bool
 	locker   sync.Locker
 }
 
-func NewTdexFeeder(feeds []Feed, targets []Target) TdexFeeder {
+func NewTdexFeeder(feeds []domain.Feed, targets []domain.Target) TdexFeeder {
 	return &tdexFeeder{
 		feeds:    feeds,
 		targets:  targets,
@@ -62,4 +64,28 @@ func (t *tdexFeeder) IsRunning() bool {
 	t.locker.Lock()
 	defer t.locker.Unlock()
 	return t.running
+}
+
+// merge gathers several feeds into a unique channel
+func merge(feeds ...domain.Feed) <-chan domain.MarketPrice {
+	mergedChan := make(chan domain.MarketPrice)
+	var wg sync.WaitGroup
+
+	wg.Add(len(feeds))
+	for _, feed := range feeds {
+		c := feed.GetMarketPriceChan()
+		go func(c <-chan domain.MarketPrice) {
+			for marketPrice := range c {
+				mergedChan <- marketPrice
+			}
+			wg.Done()
+		}(c)
+	}
+
+	go func() {
+		wg.Wait()
+		close(mergedChan)
+	}()
+
+	return mergedChan
 }

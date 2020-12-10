@@ -1,28 +1,32 @@
-package domain
+package application
 
 import (
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/tdex-network/tdex-feeder/internal/domain"
 )
 
 func TestFeeder(t *testing.T) {
-	feed := NewFeed()
-	feedBis := NewFeed()
+	feed := domain.NewFeed()
+	feedBis := domain.NewFeed()
 
 	target := &mockTarget{
-		marketPrices: make([]MarketPrice, 0),
+		marketPrices: make([]domain.MarketPrice, 0),
 	}
 
-	feeder := NewTdexFeeder([]Feed{feed, feedBis}, []Target{target})
+	feeder := NewTdexFeeder(
+		[]domain.Feed{feed, feedBis},
+		[]domain.Target{target},
+	)
 
-	marketPrice := MarketPrice{
-		Market: Market{
+	marketPrice := domain.MarketPrice{
+		Market: domain.Market{
 			BaseAsset:  "1111",
 			QuoteAsset: "0000",
 		},
-		Price: Price{
+		Price: domain.Price{
 			BasePrice:  0.2,
 			QuotePrice: 1,
 		},
@@ -52,12 +56,4 @@ func TestFeeder(t *testing.T) {
 	feeder.Stop()
 
 	assert.Equal(t, 15, len(target.marketPrices))
-}
-
-type mockTarget struct {
-	marketPrices []MarketPrice
-}
-
-func (t *mockTarget) Push(marketPrice MarketPrice) {
-	t.marketPrices = append(t.marketPrices, marketPrice)
 }

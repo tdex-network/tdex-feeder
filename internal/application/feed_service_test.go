@@ -31,7 +31,7 @@ func TestKrakenFeedService(t *testing.T) {
 
 	feed := svc.GetFeed()
 	target := &mockTarget{marketPrices: []domain.MarketPrice{}}
-	feeder := domain.NewTdexFeeder([]domain.Feed{feed}, []domain.Target{target})
+	feeder := NewTdexFeeder([]domain.Feed{feed}, []domain.Target{target})
 	go func() {
 		err := feeder.Start()
 		if err != nil {
@@ -43,12 +43,4 @@ func TestKrakenFeedService(t *testing.T) {
 	feeder.Stop()
 
 	assert.Equal(t, true, len(target.marketPrices) > 0)
-}
-
-type mockTarget struct {
-	marketPrices []domain.MarketPrice
-}
-
-func (t *mockTarget) Push(marketPrice domain.MarketPrice) {
-	t.marketPrices = append(t.marketPrices, marketPrice)
 }

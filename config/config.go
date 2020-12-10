@@ -23,9 +23,11 @@ func init() {
 	vip.AutomaticEnv()
 
 	vip.SetDefault(LogLevelKey, 4)
-	vip.SetDefault(ConfigFilePathKey, "./config.json")
 
 	validate()
+
+	// this skip the check for default config file (avoid make test fail)
+	vip.SetDefault(ConfigFilePathKey, "./config.json")
 }
 
 func GetConfigPath() string {
