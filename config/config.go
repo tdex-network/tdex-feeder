@@ -1,96 +1,56 @@
 package config
 
 import (
-	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"log"
 	"os"
-	"reflect"
-	"strings"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 const (
-	defaultDaemonEndpoint   = "localhost:9000"
-	defaultKrakenWsEndpoint = "ws.kraken.com"
+	// ConfigFilePathKey is the location of the config.json file.
+	ConfigFilePathKey = "CONFIG_PATH"
+	// LogLevelKey ...
+	LogLevelKey = "LOG_LEVEL"
 )
 
-// Config defines the struct for the configuration JSON file
-type Config struct {
-	DaemonEndpoint   string   `json:"daemon_endpoint,required"`
-	DaemonMacaroon   string   `json:"daemon_macaroon"`
-	KrakenWsEndpoint string   `json:"kraken_ws_endpoint,required"`
-	Markets          []Market `json:"markets,required"`
+var vip *viper.Viper
+
+func init() {
+	vip = viper.New()
+	vip.SetEnvPrefix("FEEDER")
+	vip.AutomaticEnv()
+
+	vip.SetDefault(LogLevelKey, 4)
+
+	validate()
+
+	// this skip the check for default config file (avoid make test fail)
+	vip.SetDefault(ConfigFilePathKey, "./config.json")
 }
 
-// DefaultConfig returns the datastructure needed
-// for a default connection.
-func defaultConfig() Config {
-	return Config{
-		DaemonEndpoint:   defaultDaemonEndpoint,
-		KrakenWsEndpoint: defaultKrakenWsEndpoint,
-		Markets:          nil,
+func GetConfigPath() string {
+	return vip.GetString(ConfigFilePathKey)
+}
+
+func validate() {
+	if err := validatePath(vip.GetString(ConfigFilePathKey)); err != nil {
+		log.Fatal(err)
 	}
 }
 
-// LoadConfigFromFile reads a file with the intended running behaviour
-// and returns a Config struct with the respective configurations.
-func loadConfigFromFile(filePath string) (Config, error) {
-	jsonFile, err := os.Open(filePath)
-	if err != nil {
-		return Config{}, err
-	}
-	defer jsonFile.Close()
+func validatePath(path string) error {
+	if path != "" {
+		stat, err := os.Stat(path)
+		if err != nil {
+			return err
+		}
 
-	var config Config
-
-	byteValue, err := ioutil.ReadAll(jsonFile)
-	if err != nil {
-		return Config{}, err
-	}
-	err = json.Unmarshal(byteValue, &config)
-	if err != nil {
-		return Config{}, err
-	}
-	err = checkConfigParsing(config)
-	if err != nil {
-		return Config{}, err
-	}
-
-	return config, nil
-}
-
-// checkConfigParsing checks if all the required fields
-// were correctly loaded into the Config struct.
-func checkConfigParsing(config Config) error {
-	fields := reflect.ValueOf(config)
-	for i := 0; i < fields.NumField(); i++ {
-		tags := fields.Type().Field(i).Tag
-		if strings.Contains(string(tags), "required") && fields.Field(i).IsZero() {
-			return errors.New("Config required field is missing: " + string(tags))
+		if stat.IsDir() {
+			return errors.New("not a file")
 		}
 	}
-	for _, market := range config.Markets {
-		fields := reflect.ValueOf(market)
-		for i := 0; i < fields.NumField(); i++ {
-			tags := fields.Type().Field(i).Tag
-			if strings.Contains(string(tags), "required") && fields.Field(i).IsZero() {
-				return errors.New("Config required field is missing: " + string(tags))
-			}
-		}
-	}
+
 	return nil
-}
-
-// LoadConfig handles the default behaviour for loading
-// config.json files. In case the file is not found,
-// it loads the default config.
-func LoadConfig(filePath string) (Config, error) {
-	_, err := os.Stat(filePath)
-	if os.IsNotExist(err) {
-		log.Debugf("File not found: %s. Loading default config.\n", filePath)
-		return defaultConfig(), nil
-	}
-	return loadConfigFromFile(filePath)
 }
