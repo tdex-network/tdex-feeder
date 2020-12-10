@@ -48,7 +48,7 @@ func (t *tdexFeeder) Start() error {
 			t.running = false
 			break
 		case marketPrice := <-marketPriceChannel:
-			log.Info("New market price: Market = ", marketPrice.Market, " | Price = ", marketPrice.Price)
+			log.Info("Market ", marketPrice.Market.BaseAsset[:4], "-", marketPrice.Market.QuoteAsset[:4], " | Base Price ", marketPrice.Price.BasePrice, " | Quote Price ", marketPrice.Price.QuotePrice)
 			for index, target := range t.targets {
 				target.Push(marketPrice)
 				log.Debug("Pushed to target ", index)
