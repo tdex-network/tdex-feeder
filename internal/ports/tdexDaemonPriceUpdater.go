@@ -51,7 +51,7 @@ func (updater *tdexDaemonPriceUpdater) UpdateMarketPrice(ctx context.Context, ma
 		},
 		Price: &types.Price{
 			BasePrice:  marketPrice.Price.BasePrice,
-			QuotePrice: marketPrice.Price.BasePrice,
+			QuotePrice: marketPrice.Price.QuotePrice,
 		},
 	}
 
