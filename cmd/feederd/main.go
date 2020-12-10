@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
+	"syscall"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/tdex-network/tdex-feeder/internal/adapters"
@@ -22,7 +23,7 @@ const (
 func main() {
 	// Interrupt Notification.
 	interrupt := make(chan os.Signal, 1)
-	signal.Notify(interrupt, os.Interrupt)
+	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 
 	// retrieve feeder service from config file
 	envConfigPath := os.Getenv(envConfigPathKey)
