@@ -30,6 +30,7 @@ func init() {
 	vip.SetDefault(ConfigFilePathKey, "./config.json")
 }
 
+// GetConfigPath return the path of the config.json file
 func GetConfigPath() string {
 	return vip.GetString(ConfigFilePathKey)
 }

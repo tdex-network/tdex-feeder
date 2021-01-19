@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc"
 )
 
+// TdexDaemonPriceUpdater is a grpc client using to call UpdateMarketPrice RPC of tdex daemon
 type TdexDaemonPriceUpdater interface {
 	UpdateMarketPrice(ctx context.Context, marketPrice domain.MarketPrice) error
 }

@@ -1,5 +1,6 @@
 package domain
 
+// MarketPrice represents a new price associated with a given market
 type MarketPrice struct {
 	Market Market
 	Price  Price
