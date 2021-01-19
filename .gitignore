@@ -16,6 +16,6 @@
 build/
 
 cmd/feederd/tdexd
-cmd/feederd/config.json
+cmd/feederd/config*.json
 
 config.json

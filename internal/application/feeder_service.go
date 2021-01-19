@@ -5,6 +5,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/tdex-network/tdex-feeder/internal/domain"
+	"github.com/tdex-network/tdex-feeder/pkg/feeder"
 )
 
 type FeederService interface {
@@ -13,7 +14,7 @@ type FeederService interface {
 }
 
 type feederService struct {
-	tdexFeeder    TdexFeeder
+	tdexFeeder    feeder.Service
 	krakenService FeedService
 	target        *TdexDaemonTarget
 }
@@ -33,7 +34,7 @@ func NewFeederService(args NewFeederServiceArgs) FeederService {
 		log.Fatal(err)
 	}
 
-	feeder := NewTdexFeeder(
+	feeder := feeder.NewFeeder(
 		[]domain.Feed{krakenFeedService.GetFeed()},
 		[]domain.Target{target},
 	)

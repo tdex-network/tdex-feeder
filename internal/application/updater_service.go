@@ -10,7 +10,7 @@ import (
 	"github.com/tdex-network/tdex-feeder/internal/ports"
 )
 
-// Implements the domain.Target interface and manage interval for each market
+// TdexDaemonTarget implements the domain.Target interface and manage interval for each market
 type TdexDaemonTarget struct {
 	Endpoint           string
 	priceUpdater       ports.TdexDaemonPriceUpdater

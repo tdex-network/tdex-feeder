@@ -1,4 +1,4 @@
-package application
+package feeder
 
 import (
 	"errors"
@@ -8,13 +8,14 @@ import (
 	"github.com/tdex-network/tdex-feeder/internal/domain"
 )
 
-type TdexFeeder interface {
+// Service is the interface describing the feeder behavior
+type Service interface {
 	Start() error
 	Stop()
 	IsRunning() bool
 }
 
-type tdexFeeder struct {
+type feederService struct {
 	feeds    []domain.Feed
 	targets  []domain.Target
 	stopChan chan bool
@@ -22,8 +23,9 @@ type tdexFeeder struct {
 	locker   sync.Locker
 }
 
-func NewTdexFeeder(feeds []domain.Feed, targets []domain.Target) TdexFeeder {
-	return &tdexFeeder{
+// NewFeeder is the factory function for feeder service
+func NewFeeder(feeds []domain.Feed, targets []domain.Target) Service {
+	return &feederService{
 		feeds:    feeds,
 		targets:  targets,
 		stopChan: make(chan bool),
@@ -34,7 +36,7 @@ func NewTdexFeeder(feeds []domain.Feed, targets []domain.Target) TdexFeeder {
 
 // Start observe all the feeds chan (using merge function)
 // and push the results to all targets
-func (t *tdexFeeder) Start() error {
+func (t *feederService) Start() error {
 	if t.IsRunning() {
 		return errors.New("the feeder is already started")
 	}
@@ -59,11 +61,11 @@ func (t *tdexFeeder) Start() error {
 	return nil
 }
 
-func (t *tdexFeeder) Stop() {
+func (t *feederService) Stop() {
 	t.stopChan <- true
 }
 
-func (t *tdexFeeder) IsRunning() bool {
+func (t *feederService) IsRunning() bool {
 	t.locker.Lock()
 	defer t.locker.Unlock()
 	return t.running

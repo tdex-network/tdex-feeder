@@ -6,6 +6,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/tdex-network/tdex-feeder/internal/domain"
+	"github.com/tdex-network/tdex-feeder/pkg/feeder"
+	"github.com/tdex-network/tdex-feeder/pkg/testutils"
 )
 
 const (
@@ -30,8 +32,8 @@ func TestKrakenFeedService(t *testing.T) {
 	defer svc.Stop()
 
 	feed := svc.GetFeed()
-	target := &mockTarget{marketPrices: []domain.MarketPrice{}}
-	feeder := NewTdexFeeder([]domain.Feed{feed}, []domain.Target{target})
+	target := &testutils.MockTarget{MarketPrices: []domain.MarketPrice{}}
+	feeder := feeder.NewFeeder([]domain.Feed{feed}, []domain.Target{target})
 	go func() {
 		err := feeder.Start()
 		if err != nil {
@@ -42,5 +44,5 @@ func TestKrakenFeedService(t *testing.T) {
 	time.Sleep(10 * time.Second)
 	feeder.Stop()
 
-	assert.Equal(t, true, len(target.marketPrices) > 0)
+	assert.Equal(t, true, len(target.MarketPrices) > 0)
 }
