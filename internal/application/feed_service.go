@@ -7,6 +7,7 @@ import (
 	"github.com/tdex-network/tdex-feeder/internal/ports"
 )
 
+// FeedService is the interface wrapping krakenWS and transform it into a domain.Feed
 type FeedService interface {
 	Start()
 	Stop()
@@ -20,6 +21,7 @@ type krakenFeedService struct {
 	tickersToMarketMap map[string]domain.Market
 }
 
+// NewKrakenFeedService is the factory function for FeedService
 func NewKrakenFeedService(
 	address string,
 	tickersToMarketMap map[string]domain.Market,

@@ -9,19 +9,22 @@ import (
 	"github.com/tdex-network/tdex-feeder/internal/domain"
 )
 
-type MarketJson struct {
+// MarketJSON is the struct describing the shape of market specs in config JSON file
+type MarketJSON struct {
 	BaseAsset    string `json:"base_asset"`
 	QuoteAsset   string `json:"quote_asset"`
 	KrakenTicker string `json:"kraken_ticker"`
 	Interval     int    `json:"interval"`
 }
 
-type ConfigJson struct {
+// ConfigJSON is the struct describing the shape of config JSON file
+type ConfigJSON struct {
 	DaemonEndpoint   string       `json:"daemon_endpoint"`
 	KrakenWsEndpoint string       `json:"kraken_ws_endpoint"`
-	Markets          []MarketJson `json:"markets"`
+	Markets          []MarketJSON `json:"markets"`
 }
 
+// Config is the config of the application retreived from config JSON file
 type Config struct {
 	daemonEndpoint  string
 	krakenWSaddress string
@@ -29,6 +32,7 @@ type Config struct {
 	marketIntervals map[domain.Market]time.Duration
 }
 
+// ToFeederService transforms a Config into FeederService
 func (config *Config) ToFeederService() application.FeederService {
 	feederSvc := application.NewFeederService(application.NewFeederServiceArgs{
 		KrakenWSaddress:  config.krakenWSaddress,
@@ -40,8 +44,9 @@ func (config *Config) ToFeederService() application.FeederService {
 	return feederSvc
 }
 
+// UnmarshalJSON ...
 func (config *Config) UnmarshalJSON(data []byte) error {
-	jsonConfig := &ConfigJson{}
+	jsonConfig := &ConfigJSON{}
 	err := json.Unmarshal(data, jsonConfig)
 	if err != nil {
 		return err
@@ -58,14 +63,14 @@ func (config *Config) UnmarshalJSON(data []byte) error {
 	configTickerToMarketMap := make(map[string]domain.Market)
 	marketIntervalsMap := make(map[domain.Market]time.Duration)
 
-	for _, marketJson := range jsonConfig.Markets {
+	for _, marketJSON := range jsonConfig.Markets {
 		market := domain.Market{
-			BaseAsset:  marketJson.BaseAsset,
-			QuoteAsset: marketJson.QuoteAsset,
+			BaseAsset:  marketJSON.BaseAsset,
+			QuoteAsset: marketJSON.QuoteAsset,
 		}
 
-		configTickerToMarketMap[marketJson.KrakenTicker] = market
-		marketIntervalsMap[market] = time.Duration(marketJson.Interval) * time.Millisecond
+		configTickerToMarketMap[marketJSON.KrakenTicker] = market
+		marketIntervalsMap[market] = time.Duration(marketJSON.Interval) * time.Millisecond
 	}
 
 	config.markets = configTickerToMarketMap
@@ -74,7 +79,7 @@ func (config *Config) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (configJson ConfigJson) validate() error {
+func (configJson ConfigJSON) validate() error {
 	if configJson.DaemonEndpoint == "" {
 		return ErrDaemonEndpointIsEmpty
 	}
@@ -87,22 +92,22 @@ func (configJson ConfigJson) validate() error {
 		return ErrNeedAtLeastOneMarketToFeed
 	}
 
-	for _, marketJson := range configJson.Markets {
-		if marketJson.KrakenTicker == "" {
+	for _, marketJSON := range configJson.Markets {
+		if marketJSON.KrakenTicker == "" {
 			return ErrKrakenTickerIsEmpty
 		}
 
-		err := validateAssetString(marketJson.BaseAsset)
+		err := validateAssetString(marketJSON.BaseAsset)
 		if err != nil {
 			return err
 		}
 
-		err = validateAssetString(marketJson.QuoteAsset)
+		err = validateAssetString(marketJSON.QuoteAsset)
 		if err != nil {
 			return err
 		}
 
-		if marketJson.Interval < 0 {
+		if marketJSON.Interval < 0 {
 			return ErrIntervalIsNotPositiveNumber
 		}
 	}

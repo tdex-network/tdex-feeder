@@ -1,4 +1,4 @@
-package application
+package feeder
 
 import (
 	"testing"
@@ -6,17 +6,18 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/tdex-network/tdex-feeder/internal/domain"
+	"github.com/tdex-network/tdex-feeder/pkg/testutils"
 )
 
 func TestFeeder(t *testing.T) {
 	feed := domain.NewFeed()
 	feedBis := domain.NewFeed()
 
-	target := &mockTarget{
-		marketPrices: make([]domain.MarketPrice, 0),
+	target := &testutils.MockTarget{
+		MarketPrices: make([]domain.MarketPrice, 0),
 	}
 
-	feeder := NewTdexFeeder(
+	feeder := NewFeeder(
 		[]domain.Feed{feed, feedBis},
 		[]domain.Target{target},
 	)
@@ -55,5 +56,5 @@ func TestFeeder(t *testing.T) {
 	time.Sleep(500 * time.Millisecond)
 	feeder.Stop()
 
-	assert.Equal(t, 15, len(target.marketPrices))
+	assert.Equal(t, 15, len(target.MarketPrices))
 }

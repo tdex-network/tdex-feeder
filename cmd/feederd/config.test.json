@@ -1,10 +1,1 @@
-{
-    "daemon_endpoint":"127.0.0.1:9000",
-    "kraken_ws_endpoint":"ws.kraken.com",
-    "markets": [
-        {
-            "base_asset":"5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225","quote_asset":"bffce3908a595436b6ab08f916fea2c9fc6a702f46b268ca354205d127f60c48","kraken_ticker":"LTC/USDT",
-            "interval":500
-        }
-    ]
-}
+{"daemon_endpoint":"127.0.0.1:9000","kraken_ws_endpoint":"ws.kraken.com","markets":[{"base_asset":"5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225","quote_asset":"91b988204bfb8568d81d7c2962c5f37d6e413e5efaa36c417d245ba2237e8320","kraken_ticker":"LTC/USDT","interval":500}]}

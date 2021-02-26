@@ -21,7 +21,7 @@ const (
 	daemonEndpoint   = "127.0.0.1:9000"
 	krakenWsEndpoint = "ws.kraken.com"
 	// nigiriUrl = "https://nigiri.network/liquid/api"
-	nigiriUrl = "http://localhost:3001"
+	nigiriURL = "http://localhost:3001"
 	password  = "vulpemsecret"
 )
 
@@ -41,11 +41,11 @@ func TestFeeder(t *testing.T) {
 func runDaemonAndInitConfigFile(t *testing.T) {
 	usdt := runDaemonAndCreateMarket(t)
 
-	configJson := adapters.ConfigJson{
+	configJSON := adapters.ConfigJSON{
 		DaemonEndpoint:   daemonEndpoint,
 		KrakenWsEndpoint: krakenWsEndpoint,
-		Markets: []adapters.MarketJson{
-			adapters.MarketJson{
+		Markets: []adapters.MarketJSON{
+			adapters.MarketJSON{
 				KrakenTicker: "LTC/USDT",
 				BaseAsset:    "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225",
 				QuoteAsset:   usdt,
@@ -54,7 +54,7 @@ func runDaemonAndInitConfigFile(t *testing.T) {
 		},
 	}
 
-	bytes, err := json.Marshal(configJson)
+	bytes, err := json.Marshal(configJSON)
 	if err != nil {
 		t.Error(err)
 	}
@@ -72,7 +72,7 @@ func runDaemonAndCreateMarket(t *testing.T) string {
 		"-d",
 		"-v", "tdexd:/.tdex-daemon",
 		"-e", "TDEX_NETWORK=regtest",
-		"-e", "TDEX_EXPLORER_ENDPOINT="+nigiriUrl,
+		"-e", "TDEX_EXPLORER_ENDPOINT="+nigiriURL,
 		"-e", "TDEX_FEE_ACCOUNT_BALANCE_TRESHOLD=1000",
 		"-e", "TDEX_BASE_ASSET=5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225",
 		"-e", "TDEX_LOG_LEVEL=5",
@@ -107,14 +107,14 @@ func runDaemonAndCreateMarket(t *testing.T) string {
 		t.Error(err)
 	}
 
-	depositMarketJson, err := runCLICommand("depositmarket", "--base_asset", "", "--quote_asset", "")
+	depositMarketJSON, err := runCLICommand("depositmarket", "--base_asset", "", "--quote_asset", "")
 	if err != nil {
 		t.Error(err)
 	}
 
 	var depositMarketResult map[string]interface{}
 
-	err = json.Unmarshal([]byte(depositMarketJson), &depositMarketResult)
+	err = json.Unmarshal([]byte(depositMarketJSON), &depositMarketResult)
 	if err != nil {
 		t.Error(t, err)
 	}
@@ -153,7 +153,7 @@ func fundMarketAddress(t *testing.T, address string) string {
 }
 
 func mint(address string, amount int) (string, string, error) {
-	url := fmt.Sprintf("%s/mint", nigiriUrl)
+	url := fmt.Sprintf("%s/mint", nigiriURL)
 	payload := map[string]interface{}{"address": address, "quantity": amount}
 	body, _ := json.Marshal(payload)
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(body))
@@ -183,7 +183,7 @@ func mint(address string, amount int) (string, string, error) {
 }
 
 func faucet(address string) (string, error) {
-	url := fmt.Sprintf("%s/faucet", nigiriUrl)
+	url := fmt.Sprintf("%s/faucet", nigiriURL)
 	payload := map[string]string{"address": address}
 	body, _ := json.Marshal(payload)
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(body))

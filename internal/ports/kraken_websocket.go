@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// KrakenWebSocket is the interface to manage kraken web socket streams
 type KrakenWebSocket interface {
 	Connect(address string, tickersToSubscribe []string) error
 	StartListen() (chan TickerWithPrice, error)
@@ -18,6 +19,7 @@ type krakenWebSocket struct {
 	tickerWithPriceChan chan TickerWithPrice
 }
 
+// NewKrakenWebSocket is a factory function for KrakenWebSocket interface
 func NewKrakenWebSocket() KrakenWebSocket {
 	return &krakenWebSocket{
 		krakenWS:            ws.New(),
