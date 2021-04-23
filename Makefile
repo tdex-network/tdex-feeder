@@ -1,4 +1,4 @@
-.PHONY: build-arm build-linux build-mac clean cov fmt help vet test
+.PHONY: build run clean cov fmt help vet test shorttest integrationtest
 
 ## build-arm: build binary for ARM
 build:
