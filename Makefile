@@ -1,22 +1,9 @@
 .PHONY: build-arm build-linux build-mac clean cov fmt help vet test
 
 ## build-arm: build binary for ARM
-build-arm:
-	export GO111MODULE=on
+build:
 	chmod u+x ./scripts/build
-	./scripts/build linux arm
-
-## build-linux: build binary for Linux
-build-linux:
-	export GO111MODULE=on
-	chmod u+x ./scripts/build
-	./scripts/build linux amd64
-
-## build-mac: build binary for Mac
-build-mac:
-	export GO111MODULE=on
-	chmod u+x ./scripts/build
-	./scripts/build darwin amd64
+	./scripts/build
 
 ## clean: cleans the binary
 clean:
@@ -40,14 +27,10 @@ help:
 	@sed -n 's/^##//p' ${MAKEFILE_LIST} | column -t -s ':' |  sed -e 's/^/ /'
 
 ## run-linux: Run locally with default configuration
-run-linux: clean build-linux
+run: clean
+	export FEEDER_CONFIG_PATH=./config.example.json; \
 	export FEEDER_LOG_LEVEL=5; \
-	./build/feederd-linux-amd64
-
-## run-mac: Run locally with default configuration
-run-mac: clean build-mac
-	export FEEDER_LOG_LEVEL=5; \
-	./build/feederd-darwin-amd64
+	go run cmd/feederd/main.go
 
 ## vet: code analysis
 vet:
