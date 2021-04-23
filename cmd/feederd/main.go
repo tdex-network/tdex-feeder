@@ -19,7 +19,7 @@ import (
 func main() {
 	// Interrupt Notification.
 	interrupt := make(chan os.Signal, 1)
-	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+	signal.Notify(interrupt, syscall.SIGTERM, syscall.SIGINT)
 
 	// retrieve feeder service from config file
 	feeder := configFileToFeederService(config.GetConfigPath())
