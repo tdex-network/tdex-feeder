@@ -34,7 +34,7 @@ func NewKrakenFeedService(
 	}
 
 	krakenSocket := ports.NewKrakenWebSocket()
-	err := krakenSocket.Connect(address, tickersToSubscribe)
+	err := krakenSocket.Connect(tickersToSubscribe)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func NewKrakenFeedService(
 func (f *krakenFeedService) Start() {
 	listening := true
 	log.Info("Kraken web socket feed is listening")
-	tickerWithPriceChan, err := f.krakenWebSocket.StartListen()
+	tickerWithPriceChan, err := f.krakenWebSocket.Start()
 	if err != nil {
 		log.Fatal(err)
 	}

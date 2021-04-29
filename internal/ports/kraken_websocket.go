@@ -9,14 +9,15 @@ import (
 
 // KrakenWebSocket is the interface to manage kraken web socket streams
 type KrakenWebSocket interface {
-	Connect(address string, tickersToSubscribe []string) error
-	StartListen() (chan TickerWithPrice, error)
+	Connect(tickersToSubscribe []string) error
+	Start() (chan TickerWithPrice, error)
 	Close() error
 }
 
 type krakenWebSocket struct {
 	krakenWS            *ws.Client
 	tickerWithPriceChan chan TickerWithPrice
+	isListening         bool
 }
 
 // NewKrakenWebSocket is a factory function for KrakenWebSocket interface
@@ -24,11 +25,12 @@ func NewKrakenWebSocket() KrakenWebSocket {
 	return &krakenWebSocket{
 		krakenWS:            ws.New(),
 		tickerWithPriceChan: make(chan TickerWithPrice),
+		isListening:         false,
 	}
 }
 
 // Connect method will connect to the websocket kraken server, ping it and subscribe to tickers threads.
-func (socket *krakenWebSocket) Connect(address string, tickersToSubscribe []string) error {
+func (socket *krakenWebSocket) Connect(tickersToSubscribe []string) error {
 	// connect to server
 	err := socket.krakenWS.Connect()
 	if err != nil {
@@ -49,16 +51,23 @@ func (socket *krakenWebSocket) Connect(address string, tickersToSubscribe []stri
 	return nil
 }
 
-func (socket *krakenWebSocket) StartListen() (chan TickerWithPrice, error) {
+func (socket *krakenWebSocket) Start() (chan TickerWithPrice, error) {
 	if socket.krakenWS == nil {
 		return nil, errors.New("Socket not connected")
 	}
 
+	if socket.isListening {
+		return nil, errors.New("socket is already listening")
+	}
+
 	go func() {
 		for obj := range socket.krakenWS.Listen() {
+			log.Warn(obj)
 			switch obj := obj.(type) {
 			case error:
-				log.Debug("Channel closed: ", obj)
+				log.Warn("Channel closed: ", obj)
+				socket.Close()
+				break
 			case ws.DataUpdate:
 				tickerUpdate, ok := obj.Data.(ws.TickerUpdate)
 				if ok {
@@ -68,6 +77,7 @@ func (socket *krakenWebSocket) StartListen() (chan TickerWithPrice, error) {
 					}
 					socket.tickerWithPriceChan <- result
 				}
+			default:
 			}
 		}
 	}()
@@ -76,7 +86,9 @@ func (socket *krakenWebSocket) StartListen() (chan TickerWithPrice, error) {
 }
 
 func (socket *krakenWebSocket) Close() error {
-	socket.krakenWS.Close()
-	socket.krakenWS = nil
+	if !socket.krakenWS.IsConnected() {
+		socket.krakenWS.Close()
+		socket.krakenWS = nil
+	}
 	return nil
 }

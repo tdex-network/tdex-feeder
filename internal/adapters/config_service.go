@@ -19,15 +19,13 @@ type MarketJSON struct {
 
 // ConfigJSON is the struct describing the shape of config JSON file
 type ConfigJSON struct {
-	DaemonEndpoint   string       `json:"daemon_endpoint"`
-	KrakenWsEndpoint string       `json:"kraken_ws_endpoint"`
-	Markets          []MarketJSON `json:"markets"`
+	DaemonEndpoint string       `json:"daemon_endpoint"`
+	Markets        []MarketJSON `json:"markets"`
 }
 
 // Config is the config of the application retreived from config JSON file
 type Config struct {
 	daemonEndpoint  string
-	krakenWSaddress string
 	markets         map[string]domain.Market
 	marketIntervals map[domain.Market]time.Duration
 }
@@ -35,7 +33,6 @@ type Config struct {
 // ToFeederService transforms a Config into FeederService
 func (config *Config) ToFeederService() application.FeederService {
 	feederSvc := application.NewFeederService(application.NewFeederServiceArgs{
-		KrakenWSaddress:  config.krakenWSaddress,
 		OperatorEndpoint: config.daemonEndpoint,
 		TickerToMarket:   config.markets,
 		MarketToInterval: config.marketIntervals,
@@ -58,7 +55,6 @@ func (config *Config) UnmarshalJSON(data []byte) error {
 	}
 
 	config.daemonEndpoint = jsonConfig.DaemonEndpoint
-	config.krakenWSaddress = jsonConfig.KrakenWsEndpoint
 
 	configTickerToMarketMap := make(map[string]domain.Market)
 	marketIntervalsMap := make(map[domain.Market]time.Duration)
@@ -82,10 +78,6 @@ func (config *Config) UnmarshalJSON(data []byte) error {
 func (configJson ConfigJSON) validate() error {
 	if configJson.DaemonEndpoint == "" {
 		return ErrDaemonEndpointIsEmpty
-	}
-
-	if configJson.KrakenWsEndpoint == "" {
-		return ErrKrakenEndpointIsEmpty
 	}
 
 	if len(configJson.Markets) == 0 {

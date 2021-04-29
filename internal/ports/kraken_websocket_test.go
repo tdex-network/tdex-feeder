@@ -7,13 +7,12 @@ import (
 )
 
 const (
-	address = "ws.kraken.com"
-	ticker  = "XBT/USDT"
+	ticker = "XBT/USDT"
 )
 
 func createAndConnect() (KrakenWebSocket, error) {
 	krakenWS := NewKrakenWebSocket()
-	err := krakenWS.Connect(address, []string{ticker})
+	err := krakenWS.Connect([]string{ticker})
 	return krakenWS, err
 }
 
@@ -28,7 +27,7 @@ func TestListen(t *testing.T) {
 		t.Error(err)
 	}
 
-	tickerWithPriceChan, err := ws.StartListen()
+	tickerWithPriceChan, err := ws.Start()
 	assert.Nil(t, err)
 
 	nextTickerWithPrice := <-tickerWithPriceChan
