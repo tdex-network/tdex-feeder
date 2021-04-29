@@ -12,6 +12,10 @@ const (
 	krakenWebSocketURL = "ws.kraken.com"
 )
 
+var (
+	NotSubscribeError = errors.New("message is not a subscribe response")
+)
+
 type Subscription struct {
 	Name     string `json:"name"`
 	Interval int    `json:"interval,omitempty"`
@@ -64,8 +68,22 @@ func toTickerWithPrice(message []byte) (*TickerWithPrice, error) {
 	}
 
 	if len(result) == 4 {
-		pair := result[3].(string)
-		price, err := strconv.ParseFloat(result[1].(map[string]interface{})["c"].([]interface{})[0].(string), 64)
+		pair, ok := result[3].(string)
+		if !ok {
+			return nil, NotSubscribeError
+		}
+
+		temp, ok := result[1].(map[string]interface{})
+		if !ok {
+			return nil, NotSubscribeError
+		}
+
+		prices, ok := temp["c"].([]interface{})
+		if !ok {
+			return nil, NotSubscribeError
+		}
+
+		price, err := strconv.ParseFloat(prices[0].(string), 32)
 		if err != nil {
 			return nil, err
 		}
@@ -76,5 +94,5 @@ func toTickerWithPrice(message []byte) (*TickerWithPrice, error) {
 		}, nil
 	}
 
-	return nil, errors.New("message is not a subscribe response")
+	return nil, NotSubscribeError
 }

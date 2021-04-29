@@ -67,18 +67,17 @@ func (socket *krakenWebSocket) listen() {
 	socket.isListening = true
 
 	for {
-		log.Info("readMsg")
 		_, message, err := socket.krakenWebSocketConn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Warn("error: ", err)
 			}
+			socket.isListening = false
 			break
 		}
 
 		tickerWithPrice, err := toTickerWithPrice(message)
 		if err != nil {
-			log.Warn("error: ", err)
 			continue
 		}
 

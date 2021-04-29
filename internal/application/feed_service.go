@@ -33,8 +33,8 @@ func NewKrakenFeedService(
 		tickersToSubscribe = append(tickersToSubscribe, k)
 	}
 
-	krakenSocket := ports.NewKrakenWebSocket()
-	err := krakenSocket.Connect(tickersToSubscribe)
+	krakenSocket := ports.NewKrakenWebSocket(tickersToSubscribe)
+	err := krakenSocket.Connect()
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func (f *krakenFeedService) Start() {
 		select {
 		case <-f.stopChan:
 			listening = false
-			err := f.krakenWebSocket.Close()
+			err := f.krakenWebSocket.Stop()
 			if err != nil {
 				log.Fatal(err)
 			}
