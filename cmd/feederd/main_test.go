@@ -42,8 +42,7 @@ func runDaemonAndInitConfigFile(t *testing.T) {
 	usdt := runDaemonAndCreateMarket(t)
 
 	configJSON := adapters.ConfigJSON{
-		DaemonEndpoint:   daemonEndpoint,
-		KrakenWsEndpoint: krakenWsEndpoint,
+		DaemonEndpoint: daemonEndpoint,
 		Markets: []adapters.MarketJSON{
 			adapters.MarketJSON{
 				KrakenTicker: "LTC/USDT",

@@ -1,47 +1,48 @@
 package ports
 
 import (
-	"errors"
+	"net/url"
 
-	ws "github.com/aopoltorzhicky/go_kraken/websocket"
+	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
 )
 
 // KrakenWebSocket is the interface to manage kraken web socket streams
 type KrakenWebSocket interface {
-	Connect(address string, tickersToSubscribe []string) error
-	StartListen() (chan TickerWithPrice, error)
-	Close() error
+	Connect() error
+	Start() (chan TickerWithPrice, error)
+	Stop() error
 }
 
 type krakenWebSocket struct {
-	krakenWS            *ws.Client
+	krakenWebSocketConn *websocket.Conn
 	tickerWithPriceChan chan TickerWithPrice
+	tickersToSubscribe  []string
+	isListening         bool
 }
 
 // NewKrakenWebSocket is a factory function for KrakenWebSocket interface
-func NewKrakenWebSocket() KrakenWebSocket {
+func NewKrakenWebSocket(tickersToSubscribe []string) KrakenWebSocket {
 	return &krakenWebSocket{
-		krakenWS:            ws.New(),
+		krakenWebSocketConn: nil,
 		tickerWithPriceChan: make(chan TickerWithPrice),
+		tickersToSubscribe:  tickersToSubscribe,
+		isListening:         false,
 	}
 }
 
 // Connect method will connect to the websocket kraken server, ping it and subscribe to tickers threads.
-func (socket *krakenWebSocket) Connect(address string, tickersToSubscribe []string) error {
+func (socket *krakenWebSocket) Connect() error {
 	// connect to server
-	err := socket.krakenWS.Connect()
-	if err != nil {
-		return err
-	}
-	// test if the server is alive
-	err = socket.krakenWS.Ping()
+	url := url.URL{Scheme: "wss", Host: krakenWebSocketURL, Path: "/"}
+	websocketConn, _, err := websocket.DefaultDialer.Dial(url.String(), nil)
 	if err != nil {
 		return err
 	}
 
-	// subscribe to tickers
-	err = socket.krakenWS.SubscribeTicker(tickersToSubscribe)
+	socket.krakenWebSocketConn = websocketConn
+	subscribeMsg := createSubscribeToMarketMessage(socket.tickersToSubscribe)
+	err = sendRequestMessage(socket.krakenWebSocketConn, subscribeMsg)
 	if err != nil {
 		return err
 	}
@@ -49,34 +50,46 @@ func (socket *krakenWebSocket) Connect(address string, tickersToSubscribe []stri
 	return nil
 }
 
-func (socket *krakenWebSocket) StartListen() (chan TickerWithPrice, error) {
-	if socket.krakenWS == nil {
-		return nil, errors.New("Socket not connected")
-	}
-
-	go func() {
-		for obj := range socket.krakenWS.Listen() {
-			switch obj := obj.(type) {
-			case error:
-				log.Debug("Channel closed: ", obj)
-			case ws.DataUpdate:
-				tickerUpdate, ok := obj.Data.(ws.TickerUpdate)
-				if ok {
-					result := TickerWithPrice{
-						Ticker: tickerUpdate.Pair,
-						Price:  tickerUpdate.Close.Today.(float64),
-					}
-					socket.tickerWithPriceChan <- result
-				}
-			}
-		}
-	}()
-
+func (socket *krakenWebSocket) Start() (chan TickerWithPrice, error) {
+	go socket.listen()
 	return socket.tickerWithPriceChan, nil
 }
 
-func (socket *krakenWebSocket) Close() error {
-	socket.krakenWS.Close()
-	socket.krakenWS = nil
+func (socket *krakenWebSocket) listen() {
+	if socket.krakenWebSocketConn == nil {
+		return
+	}
+
+	if socket.isListening {
+		return
+	}
+
+	socket.isListening = true
+
+	for {
+		_, message, err := socket.krakenWebSocketConn.ReadMessage()
+		if err != nil {
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				log.Warn("error: ", err)
+			}
+			socket.isListening = false
+			break
+		}
+
+		tickerWithPrice, err := toTickerWithPrice(message)
+		if err != nil {
+			continue
+		}
+
+		socket.tickerWithPriceChan <- *tickerWithPrice
+	}
+}
+
+func (socket *krakenWebSocket) Stop() error {
+	err := socket.krakenWebSocketConn.Close()
+	if err != nil {
+		return err
+	}
+	socket.krakenWebSocketConn = nil
 	return nil
 }

@@ -80,8 +80,7 @@ connects to kraken socket and to a local instance of tdex-deamon.
 
 ```
 daemon_endpoint: String with the address and port of gRPC host. Required.
-kraken_ws_endpoint: String with the address and port of kraken socket. Required.
-markets: Json List with necessary markets informations. Required.
+market: Json List with necessary markets informations. Required.
   base_asset: String of the Hash of the base asset for gRPC request. Required.
   quote_asset: String of the Hash of the quote asset for gRPC request. Required.
   kraken_ticker: String with the ticker we want kraken to provide informations on. Required.
