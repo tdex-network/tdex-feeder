@@ -13,6 +13,9 @@ var (
 	ErrKrakenTickerIsEmpty = errors.New("krakenTicker should not be an empty string")
 	// ErrIntervalIsNotPositiveNumber is returned if the interval is < 0
 	ErrIntervalIsNotPositiveNumber = errors.New("interval must be greater (or equal) than 0")
+	// ErrInvalidAuth is returned in case one between the macaroons and the tls
+	// certificate paths are missing in case the other is defined.
+	ErrInvalidAuth = errors.New("both macaroons filepath and TLS cert path must be defined")
 )
 
 // ErrInvalidAssetHash is returned if the given string `asset` is not a valid asset hash string

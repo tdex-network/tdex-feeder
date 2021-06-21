@@ -20,25 +20,29 @@ type MarketJSON struct {
 // ConfigJSON is the struct describing the shape of config JSON file
 type ConfigJSON struct {
 	DaemonEndpoint string       `json:"daemon_endpoint"`
+	MacaroonsPath  string       `json:"macaroons_path"`
+	TLSCertPath    string       `json:"tls_cert_path"`
 	Markets        []MarketJSON `json:"markets"`
 }
 
 // Config is the config of the application retreived from config JSON file
 type Config struct {
 	daemonEndpoint  string
+	macaroonsPath   string
+	tlsCertPath     string
 	markets         map[string]domain.Market
 	marketIntervals map[domain.Market]time.Duration
 }
 
 // ToFeederService transforms a Config into FeederService
-func (config *Config) ToFeederService() application.FeederService {
-	feederSvc := application.NewFeederService(application.NewFeederServiceArgs{
+func (config *Config) ToFeederService() (application.FeederService, error) {
+	return application.NewFeederService(application.NewFeederServiceArgs{
 		OperatorEndpoint: config.daemonEndpoint,
+		MacaroonsPath:    config.macaroonsPath,
+		TLSCertPath:      config.tlsCertPath,
 		TickerToMarket:   config.markets,
 		MarketToInterval: config.marketIntervals,
 	})
-
-	return feederSvc
 }
 
 // UnmarshalJSON ...
@@ -55,6 +59,8 @@ func (config *Config) UnmarshalJSON(data []byte) error {
 	}
 
 	config.daemonEndpoint = jsonConfig.DaemonEndpoint
+	config.macaroonsPath = jsonConfig.MacaroonsPath
+	config.tlsCertPath = jsonConfig.TLSCertPath
 
 	configTickerToMarketMap := make(map[string]domain.Market)
 	marketIntervalsMap := make(map[domain.Market]time.Duration)
@@ -78,6 +84,11 @@ func (config *Config) UnmarshalJSON(data []byte) error {
 func (configJson ConfigJSON) validate() error {
 	if configJson.DaemonEndpoint == "" {
 		return ErrDaemonEndpointIsEmpty
+	}
+
+	if macOK, certOK :=
+		configJson.MacaroonsPath != "", configJson.TLSCertPath != ""; macOK != certOK {
+		return ErrInvalidAuth
 	}
 
 	if len(configJson.Markets) == 0 {
