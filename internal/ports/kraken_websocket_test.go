@@ -21,31 +21,21 @@ func TestConnectToKrakenWebSocket(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func TestStart(t *testing.T) {
+func TestStartStop(t *testing.T) {
 	ws, err := createAndConnect()
 	if err != nil {
 		t.Error(err)
 	}
 
 	tickerWithPriceChan, err := ws.Start()
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
-	nextTickerWithPrice := <-tickerWithPriceChan
-	assert.NotNil(t, nextTickerWithPrice)
-}
-
-func TestStop(t *testing.T) {
-	ws, err := createAndConnect()
-	if err != nil {
-		t.Error(err)
-	}
-
-	tickerWithPriceChan, err := ws.Start()
-	assert.Nil(t, err)
-
-	nextTickerWithPrice := <-tickerWithPriceChan
-	assert.NotNil(t, nextTickerWithPrice)
+	go func() {
+		for nextTickerWithPrice := range tickerWithPriceChan {
+			assert.NotNil(t, nextTickerWithPrice)
+		}
+	}()
 
 	err = ws.Stop()
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 }
