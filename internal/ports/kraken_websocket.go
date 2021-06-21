@@ -18,7 +18,7 @@ type krakenWebSocket struct {
 	krakenWebSocketConn *websocket.Conn
 	tickerWithPriceChan chan TickerWithPrice
 	tickersToSubscribe  []string
-	isListening         bool
+	quitChan            chan bool
 }
 
 // NewKrakenWebSocket is a factory function for KrakenWebSocket interface
@@ -27,7 +27,7 @@ func NewKrakenWebSocket(tickersToSubscribe []string) KrakenWebSocket {
 		krakenWebSocketConn: nil,
 		tickerWithPriceChan: make(chan TickerWithPrice),
 		tickersToSubscribe:  tickersToSubscribe,
-		isListening:         false,
+		quitChan:            make(chan bool, 1),
 	}
 }
 
@@ -42,12 +42,7 @@ func (socket *krakenWebSocket) Connect() error {
 
 	socket.krakenWebSocketConn = websocketConn
 	subscribeMsg := createSubscribeToMarketMessage(socket.tickersToSubscribe)
-	err = sendRequestMessage(socket.krakenWebSocketConn, subscribeMsg)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return sendRequestMessage(socket.krakenWebSocketConn, subscribeMsg)
 }
 
 func (socket *krakenWebSocket) Start() (chan TickerWithPrice, error) {
@@ -56,40 +51,35 @@ func (socket *krakenWebSocket) Start() (chan TickerWithPrice, error) {
 }
 
 func (socket *krakenWebSocket) listen() {
-	if socket.krakenWebSocketConn == nil {
-		return
-	}
-
-	if socket.isListening {
-		return
-	}
-
-	socket.isListening = true
-
 	for {
-		_, message, err := socket.krakenWebSocketConn.ReadMessage()
-		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Warn("error: ", err)
+		select {
+		case <-socket.quitChan:
+			return
+		default:
+			_, message, err := socket.krakenWebSocketConn.ReadMessage()
+			if err != nil {
+				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+					log.Warn("error: ", err)
+				}
+				break
 			}
-			socket.isListening = false
-			break
-		}
 
-		tickerWithPrice, err := toTickerWithPrice(message)
-		if err != nil {
-			continue
-		}
+			tickerWithPrice, err := toTickerWithPrice(message)
+			if err != nil {
+				continue
+			}
 
-		socket.tickerWithPriceChan <- *tickerWithPrice
+			socket.tickerWithPriceChan <- *tickerWithPrice
+		}
 	}
 }
 
 func (socket *krakenWebSocket) Stop() error {
+	socket.quitChan <- true
 	err := socket.krakenWebSocketConn.Close()
 	if err != nil {
 		return err
 	}
-	socket.krakenWebSocketConn = nil
+	close(socket.tickerWithPriceChan)
 	return nil
 }

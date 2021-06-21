@@ -2,9 +2,9 @@ package config
 
 import (
 	"errors"
-	"log"
 	"os"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -24,7 +24,10 @@ func init() {
 
 	vip.SetDefault(LogLevelKey, 4)
 
-	validate()
+	err := validate()
+	if err != nil {
+		log.Fatalf("invalid config: %s", err)
+	}
 
 	// this skip the check for default config file (avoid make test fail)
 	vip.SetDefault(ConfigFilePathKey, "./config.json")
@@ -35,10 +38,8 @@ func GetConfigPath() string {
 	return vip.GetString(ConfigFilePathKey)
 }
 
-func validate() {
-	if err := validatePath(vip.GetString(ConfigFilePathKey)); err != nil {
-		log.Fatal(err)
-	}
+func validate() error {
+	return validatePath(vip.GetString(ConfigFilePathKey))
 }
 
 func validatePath(path string) error {

@@ -3,13 +3,21 @@ package ports
 import (
 	"context"
 	"errors"
+	"fmt"
+	"io/ioutil"
 
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/macaroon.v2"
 
 	"github.com/tdex-network/tdex-feeder/internal/domain"
 	pboperator "github.com/tdex-network/tdex-protobuf/generated/go/operator"
 	"github.com/tdex-network/tdex-protobuf/generated/go/types"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+)
+
+var (
+	maxMsgRecvSize = grpc.MaxCallRecvMsgSize(1 * 1024 * 1024 * 200)
 )
 
 // TdexDaemonPriceUpdater is a grpc client using to call UpdateMarketPrice RPC of tdex daemon
@@ -18,17 +26,22 @@ type TdexDaemonPriceUpdater interface {
 }
 
 // NewTdexDaemonPriceUpdater uses the operatorInterfaceEndpoint to create a gRPC client.
-func NewTdexDaemonPriceUpdater(ctx context.Context, operatorInterfaceEndpoint string) TdexDaemonPriceUpdater {
-	connGrpc, err := connectToGRPC(ctx, operatorInterfaceEndpoint)
+func NewTdexDaemonPriceUpdater(
+	operatorInterfaceEndpoint, macaroonsPath, tlsCertPath string,
+) (TdexDaemonPriceUpdater, error) {
+	if macOK, certOK := macaroonsPath != "", tlsCertPath != ""; macOK != certOK {
+		return nil, fmt.Errorf("both macaroons filepath and TLS cert path must be defined")
+	}
+
+	connGrpc, err := connectToGRPC(operatorInterfaceEndpoint, macaroonsPath, tlsCertPath)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
-	operatorClient := pboperator.NewOperatorClient(connGrpc)
-
+	// TOSO: Add health check,
 	return &tdexDaemonPriceUpdater{
-		clientGRPC: operatorClient,
-	}
+		clientGRPC: pboperator.NewOperatorClient(connGrpc),
+	}, nil
 }
 
 type tdexDaemonPriceUpdater struct {
@@ -65,11 +78,36 @@ func (updater *tdexDaemonPriceUpdater) UpdateMarketPrice(ctx context.Context, ma
 }
 
 // ConnectTogRPC dials and returns a new client connection to a remote host
-func connectToGRPC(ctx context.Context, daemonEndpoint string) (*grpc.ClientConn, error) {
-	conn, err := grpc.DialContext(ctx, daemonEndpoint, grpc.WithInsecure(), grpc.WithBlock())
-	if err != nil {
-		return conn, err
+func connectToGRPC(daemonEndpoint, macPath, certPath string) (*grpc.ClientConn, error) {
+	opts := []grpc.DialOption{grpc.WithDefaultCallOptions(maxMsgRecvSize)}
+
+	if len(macPath) <= 0 {
+		opts = append(opts, grpc.WithInsecure())
+	} else {
+		tlsCreds, err := credentials.NewClientTLSFromFile(certPath, "")
+		if err != nil {
+			return nil, fmt.Errorf("could not read TLS certificate:  %s", err)
+		}
+
+		macBytes, err := ioutil.ReadFile(macPath)
+		if err != nil {
+			return nil, fmt.Errorf("could not read macaroon %s: %s", macPath, err)
+		}
+		mac := &macaroon.Macaroon{}
+		err = mac.UnmarshalBinary(macBytes)
+		if err != nil {
+			return nil, fmt.Errorf("could not parse macaroon %s: %s", macPath, err)
+		}
+		macCreds := NewMacaroonCredential(mac)
+		opts = append(opts, grpc.WithPerRPCCredentials(macCreds))
+		opts = append(opts, grpc.WithTransportCredentials(tlsCreds))
 	}
+
+	conn, err := grpc.Dial(daemonEndpoint, opts...)
+	if err != nil {
+		return nil, fmt.Errorf("unable to connect to RPC server: %v", err)
+	}
+
 	log.Println("Connected to gRPC:", daemonEndpoint)
 	return conn, nil
 }

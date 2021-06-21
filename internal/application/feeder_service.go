@@ -3,7 +3,6 @@ package application
 import (
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/tdex-network/tdex-feeder/internal/domain"
 	"github.com/tdex-network/tdex-feeder/pkg/feeder"
 )
@@ -23,18 +22,26 @@ type feederService struct {
 // NewFeederServiceArgs is a wrapper for NewFeederService arguments
 type NewFeederServiceArgs struct {
 	OperatorEndpoint string
+	MacaroonsPath    string
+	TLSCertPath      string
 	MarketToInterval map[domain.Market]time.Duration
 	KrakenWSaddress  string
 	TickerToMarket   map[string]domain.Market
 }
 
 // NewFeederService is the factory function for the FeederService
-func NewFeederService(args NewFeederServiceArgs) FeederService {
-	target := NewTdexDaemonTarget(args.OperatorEndpoint, args.MarketToInterval)
+func NewFeederService(args NewFeederServiceArgs) (FeederService, error) {
+	target, err := NewTdexDaemonTarget(
+		args.OperatorEndpoint, args.MacaroonsPath, args.TLSCertPath,
+		args.MarketToInterval,
+	)
+	if err != nil {
+		return nil, err
+	}
 
 	krakenFeedService, err := NewKrakenFeedService(args.KrakenWSaddress, args.TickerToMarket)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	feeder := feeder.NewFeeder(
@@ -46,17 +53,23 @@ func NewFeederService(args NewFeederServiceArgs) FeederService {
 		tdexFeeder:    feeder,
 		krakenService: krakenFeedService,
 		target:        target.(*TdexDaemonTarget),
-	}
+	}, nil
 }
 
 func (feeder *feederService) Start() error {
-	go feeder.krakenService.Start()
-	err := feeder.tdexFeeder.Start()
-	return err
+	err := feeder.krakenService.Start()
+	if err != nil {
+		return err
+	}
+
+	return feeder.tdexFeeder.Start()
 }
 
 func (feeder *feederService) Stop() error {
-	feeder.krakenService.Stop()
+	err := feeder.krakenService.Stop()
+	if err != nil {
+		return err
+	}
 	feeder.target.Stop()
 	feeder.tdexFeeder.Stop()
 	return nil

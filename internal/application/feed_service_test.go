@@ -26,9 +26,12 @@ func TestKrakenFeedService(t *testing.T) {
 
 	svc, err := NewKrakenFeedService(krakenWsEndpoint, tickerMap)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
-	go svc.Start()
+	err = svc.Start()
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer svc.Stop()
 
 	feed := svc.GetFeed()

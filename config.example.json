@@ -1,10 +1,12 @@
 {
   "daemon_endpoint": "127.0.0.1:9000",
+  "macaroons_path": "",
+  "tls_cert_path": "",
   "markets": [
     {
       "base_asset": "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225",
       "quote_asset": "e3ec88b0ed9228c3337f746f5d9ea20c1e68bbe1f73d94621c1e8452bebb9e22",
-      "kraken_ticker": "LTC/USDT",
+      "kraken_ticker": "XBT/USDT",
       "interval": 500
     }
   ]
