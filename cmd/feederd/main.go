@@ -61,6 +61,10 @@ func configFileToFeederService(configFilePath string) application.FeederService 
 		log.Fatal(err)
 	}
 
-	feeder := config.ToFeederService()
+	feeder, err := config.ToFeederService()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	return feeder
 }

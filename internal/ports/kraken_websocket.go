@@ -42,12 +42,7 @@ func (socket *krakenWebSocket) Connect() error {
 
 	socket.krakenWebSocketConn = websocketConn
 	subscribeMsg := createSubscribeToMarketMessage(socket.tickersToSubscribe)
-	err = sendRequestMessage(socket.krakenWebSocketConn, subscribeMsg)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return sendRequestMessage(socket.krakenWebSocketConn, subscribeMsg)
 }
 
 func (socket *krakenWebSocket) Start() (chan TickerWithPrice, error) {
@@ -90,6 +85,8 @@ func (socket *krakenWebSocket) Stop() error {
 	if err != nil {
 		return err
 	}
+	close(socket.tickerWithPriceChan)
 	socket.krakenWebSocketConn = nil
+	socket.isListening = false
 	return nil
 }

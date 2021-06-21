@@ -9,15 +9,14 @@ import (
 
 // FeedService is the interface wrapping krakenWS and transform it into a domain.Feed
 type FeedService interface {
-	Start()
-	Stop()
+	Start() error
+	Stop() error
 	GetFeed() domain.Feed
 }
 
 type krakenFeedService struct {
 	feed               domain.Feed
 	krakenWebSocket    ports.KrakenWebSocket
-	stopChan           chan bool
 	tickersToMarketMap map[string]domain.Market
 }
 
@@ -42,32 +41,21 @@ func NewKrakenFeedService(
 	return &krakenFeedService{
 		krakenWebSocket:    krakenSocket,
 		feed:               newFeed,
-		stopChan:           make(chan bool),
 		tickersToMarketMap: tickersToMarketMap,
 	}, nil
 }
 
 // Start is the main function of krakenFeedService
 // when start, the services is listening for new data from kraken server
-func (f *krakenFeedService) Start() {
-	listening := true
+func (f *krakenFeedService) Start() error {
 	log.Info("Kraken web socket feed is listening")
 	tickerWithPriceChan, err := f.krakenWebSocket.Start()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	for listening {
-		select {
-		case <-f.stopChan:
-			listening = false
-			err := f.krakenWebSocket.Stop()
-			if err != nil {
-				log.Fatal(err)
-			}
 
-			log.Info("Kraken web socket feed stopped")
-			break
-		case tickerWithPrice := <-tickerWithPriceChan:
+	go func() {
+		for tickerWithPrice := range tickerWithPriceChan {
 			log.Debug("Kraken web socket receive message = " + string(tickerWithPrice.Ticker))
 
 			market, ok := f.tickersToMarketMap[tickerWithPrice.Ticker]
@@ -83,13 +71,16 @@ func (f *krakenFeedService) Start() {
 					QuotePrice: float32(tickerWithPrice.Price),
 				},
 			})
+
 		}
-	}
+	}()
+
+	return nil
 }
 
-// Stop just send data to the stopChan in order to stop listening from kraken web socket
-func (f *krakenFeedService) Stop() {
-	f.stopChan <- true
+// Stop closes the connection with the kraken websocket
+func (f *krakenFeedService) Stop() error {
+	return f.krakenWebSocket.Stop()
 }
 
 // GetFeed is a getter function for kraken's feed member

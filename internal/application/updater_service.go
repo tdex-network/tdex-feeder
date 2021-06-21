@@ -22,9 +22,9 @@ type TdexDaemonTarget struct {
 // NewTdexDaemonTarget configure a tdexDaemonUpdater using the endpoint
 // and start goroutines depending of the configured intervals for each market.
 func NewTdexDaemonTarget(
-	tdexDaemonOperatorInterfaceEnpoint string,
+	tdexOperatorEndpoint, macaroonsPath, tlsCertPath string,
 	marketToIntervalMap map[domain.Market]time.Duration,
-) domain.Target {
+) (domain.Target, error) {
 	now := time.Now()
 	mapLastSent := make(map[domain.Market]time.Time)
 
@@ -32,9 +32,16 @@ func NewTdexDaemonTarget(
 		mapLastSent[market] = now
 	}
 
+	priceUpdater, err := ports.NewTdexDaemonPriceUpdater(
+		tdexOperatorEndpoint, macaroonsPath, tlsCertPath,
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	tdexTarget := &TdexDaemonTarget{
-		Endpoint:           tdexDaemonOperatorInterfaceEnpoint,
-		priceUpdater:       ports.NewTdexDaemonPriceUpdater(context.Background(), tdexDaemonOperatorInterfaceEnpoint),
+		Endpoint:           tdexOperatorEndpoint,
+		priceUpdater:       priceUpdater,
 		priceUpdaterLocker: &sync.Mutex{},
 		closeChan:          make(chan bool, 1),
 		marketsToUpdate:    make(map[domain.Market]domain.Price),
@@ -55,7 +62,7 @@ func NewTdexDaemonTarget(
 		}(interval, market)
 	}
 
-	return tdexTarget
+	return tdexTarget, nil
 }
 
 // Push is a method of the Target interface
