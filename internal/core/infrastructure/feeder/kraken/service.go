@@ -34,12 +34,6 @@ func NewKrakenPriceFeeder(args ...interface{}) (ports.PriceFeeder, error) {
 		return nil, fmt.Errorf("unknown args type")
 	}
 
-	url := fmt.Sprintf("wss://%s", KrakenWebSocketURL)
-	conn, _, err := websocket.DefaultDialer.Dial(url, nil)
-	if err != nil {
-		return nil, err
-	}
-
 	mktTickers := make([]string, 0, len(markets))
 	mktByTicker := make(map[string]ports.Market)
 	for _, mkt := range markets {
@@ -47,18 +41,11 @@ func NewKrakenPriceFeeder(args ...interface{}) (ports.PriceFeeder, error) {
 		mktByTicker[mkt.Ticker()] = mkt
 	}
 
-	msg := map[string]interface{}{
-		"event": "subscribe",
-		"pair":  mktTickers,
-		"subscription": map[string]string{
-			"name": "ticker",
-		},
+	conn, err := connectAndSubscribe(mktTickers)
+	if err != nil {
+		return nil, err
 	}
-
-	buf, _ := json.Marshal(msg)
-	if err := conn.WriteMessage(websocket.TextMessage, buf); err != nil {
-		return nil, fmt.Errorf("cannot subscribe to given markets: %s", err)
-	}
+	conn.CloseHandler()
 
 	return &service{
 		conn:           conn,
@@ -74,16 +61,55 @@ func (k *service) Start() error {
 		close(k.quitChan)
 	}()
 
+	mustReconnect, err := k.start()
+	for mustReconnect {
+		if err != nil {
+			log.WithError(err).Warn("connection dropped unexpectedly. Trying to reconnect")
+		}
+
+		tickers := make([]string, 0, len(k.marketByTicker))
+		for ticker := range k.marketByTicker {
+			tickers = append(tickers, ticker)
+		}
+
+		var conn *websocket.Conn
+		conn, err = connectAndSubscribe(tickers)
+		if err != nil {
+			return err
+		}
+		k.conn = conn
+
+		mustReconnect, err = k.start()
+	}
+
+	return err
+}
+
+func (k *service) Stop() {
+	k.quitChan <- struct{}{}
+}
+
+func (k *service) FeedChan() chan ports.PriceFeed {
+	return k.feedChan
+}
+
+func (k *service) start() (mustReconnect bool, err error) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			mustReconnect = true
+		}
+	}()
+
 	for {
 		select {
 		case <-k.quitChan:
-			return k.conn.Close()
+			err = k.conn.Close()
+			return false, err
 		default:
 			_, message, err := k.conn.ReadMessage()
 			if err != nil {
 				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-					log.WithError(err).Warn("connection closed unexpectedly")
-					return err
+					panic(err)
 				}
 			}
 
@@ -95,14 +121,6 @@ func (k *service) Start() error {
 			k.feedChan <- priceFeed
 		}
 	}
-}
-
-func (k *service) Stop() {
-	k.quitChan <- struct{}{}
-}
-
-func (k *service) FeedChan() chan ports.PriceFeed {
-	return k.feedChan
 }
 
 func (k *service) parseFeed(msg []byte) ports.PriceFeed {
@@ -155,4 +173,27 @@ func (k *service) parseFeed(msg []byte) ports.PriceFeed {
 			quotePrice: quotePrice.String(),
 		},
 	}
+}
+
+func connectAndSubscribe(mktTickers []string) (*websocket.Conn, error) {
+	url := fmt.Sprintf("wss://%s", KrakenWebSocketURL)
+	conn, _, err := websocket.DefaultDialer.Dial(url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	msg := map[string]interface{}{
+		"event": "subscribe",
+		"pair":  mktTickers,
+		"subscription": map[string]string{
+			"name": "ticker",
+		},
+	}
+
+	buf, _ := json.Marshal(msg)
+	if err := conn.WriteMessage(websocket.TextMessage, buf); err != nil {
+		return nil, fmt.Errorf("cannot subscribe to given markets: %s", err)
+	}
+
+	return conn, nil
 }
