@@ -63,9 +63,7 @@ func (k *service) Start() error {
 
 	mustReconnect, err := k.start()
 	for mustReconnect {
-		if err != nil {
-			log.WithError(err).Warn("connection dropped unexpectedly. Trying to reconnect")
-		}
+		log.WithError(err).Warn("connection dropped unexpectedly. Trying to reconnect...")
 
 		tickers := make([]string, 0, len(k.marketByTicker))
 		for ticker := range k.marketByTicker {
@@ -79,6 +77,7 @@ func (k *service) Start() error {
 		}
 		k.conn = conn
 
+		log.Debug("connection and subscriptions re-established. Restarting...")
 		mustReconnect, err = k.start()
 	}
 
