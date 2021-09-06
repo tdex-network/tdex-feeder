@@ -20,10 +20,13 @@ func init() {
 	viper.SetDefault(LogLevelKey, 4)
 
 	configPath := viper.GetString(ConfigKey)
-
-	viper.SetConfigName("config")
-	viper.SetConfigType("json")
-	viper.AddConfigPath(configPath)
+	if configPath != defaultConfig {
+		viper.SetConfigFile(configPath)
+	} else {
+		viper.SetConfigName("config")
+		viper.SetConfigType("json")
+		viper.AddConfigPath(configPath)
+	}
 }
 
 func GetConfigPath() string {
