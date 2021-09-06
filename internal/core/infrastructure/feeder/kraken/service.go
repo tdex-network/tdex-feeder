@@ -124,6 +124,17 @@ func (s *service) start() (mustReconnect bool, err error) {
 			err = s.conn.Close()
 			return false, err
 		default:
+			// Referred to:
+			//
+			// https://support.kraken.com/hc/en-us/articles/360044504011-WebSocket-API-unexpected-disconnections-from-market-data-feeds
+			//
+			// Sometimes it can happen that the line below panics instead of
+			// returning an UnexpectedCloseError. Because of this it's
+			// mandatory here to recover a potential panic to signal that the
+			// connection must be re-established.
+			// Even in case the line below returns an UnexpectedCloseError,
+			// this is used to panic so the deferred recover function is reused
+			// to still signal the need for a reconnection with kraken websocket.
 			_, message, err := s.conn.ReadMessage()
 			if err != nil {
 				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
