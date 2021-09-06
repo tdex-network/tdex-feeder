@@ -64,8 +64,6 @@ dockers:
       - go.mod
       - go.sum
       - internal
-      - config
-      - pkg
       - cmd
   # push only release with both a docker tag latest and one with the semver
   - skip_push: auto
