@@ -4,9 +4,7 @@ Feeder allows to connect several price feeds to TDex Daemon(s) in order to autom
 
 ## Overview
 
-tdex-feeder connects to exchanges and retrieves market prices in order to consume the gRPC 
-interface exposed from tdex-deamon `UpdateMarketPrice`.
-
+tdex-feeder connects to exchanges and forwards market(s) price feeds to some tdex-daemon(s) by consuming its `UpdateMarketPrice` RPC.
 ![tdex-schema](./tdexfeeder.png)
 
 ## ⬇️ Run  Standalone
