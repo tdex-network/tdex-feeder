@@ -11,10 +11,13 @@ import (
 	"github.com/tdex-network/tdex-feeder/internal/core/ports"
 )
 
-func TestService(t *testing.T) {
-	tickers := []string{"XBT/USDT", "XBT/EUR"}
+var (
+	interval = 1000 // 1s interval
+	tickers  = []string{"XBT/USDT", "XBT/EUR"}
+)
 
-	feederSvc, err := newTestService(tickers)
+func TestService(t *testing.T) {
+	feederSvc, err := newTestService()
 	require.NoError(t, err)
 
 	go func() {
@@ -41,9 +44,9 @@ func TestService(t *testing.T) {
 	require.Greater(t, count, 0)
 }
 
-func newTestService(tickers []string) (ports.PriceFeeder, error) {
+func newTestService() (ports.PriceFeeder, error) {
 	markets := mockedMarkets(tickers)
-	return krakenfeeder.NewKrakenPriceFeeder(markets)
+	return krakenfeeder.NewKrakenPriceFeeder(interval, markets)
 }
 
 func mockedMarkets(tickers []string) []ports.Market {

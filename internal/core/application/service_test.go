@@ -29,10 +29,11 @@ func TestService(t *testing.T) {
 }
 
 func newTestService() (application.Service, error) {
+	interval := 1000 // 1s interval
 	tickers := []string{"XBT/USDT", "XBT/EUR"}
 	markets := mockedMarkets(tickers)
 
-	priceFeeder, err := krakenfeeder.NewKrakenPriceFeeder(markets)
+	priceFeeder, err := krakenfeeder.NewKrakenPriceFeeder(interval, markets)
 	if err != nil {
 		return nil, err
 	}

@@ -45,7 +45,7 @@ func main() {
 		)
 	}
 
-	priceFeeder, err := priceFeederFactory(cfg.PortableMarkets())
+	priceFeeder, err := priceFeederFactory(cfg.Interval, cfg.PortableMarkets())
 	if err != nil {
 		log.WithError(err).Fatal("error while initializing price feeder")
 	}

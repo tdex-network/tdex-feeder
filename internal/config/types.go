@@ -83,12 +83,16 @@ func (m Market) validate() error {
 
 type Config struct {
 	PriceFeeder string   `mapstructure:"price_feeder"`
+	Interval    int      `mapstructure:"interval"`
 	Markets     []Market `mapstructure:"markets"`
 }
 
 func (c Config) Validate() error {
 	if c.PriceFeeder == "" {
 		return fmt.Errorf("price_feeder must not be nil")
+	}
+	if c.Interval <= 0 {
+		return fmt.Errorf("interval must be a positive value")
 	}
 	if len(c.Markets) <= 0 {
 		return fmt.Errorf("markets must not be empty")

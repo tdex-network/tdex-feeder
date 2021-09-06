@@ -79,6 +79,7 @@ NOTE: All entries of the JSON configuration file are mandatory if not otherwise 
 
 ```
 price_feeder: service where to source prices (only "kraken" available for now).
+interval: the period in millisecond with which the feeder updates its target(s).
 markets: list with necessary markets info.
   base_asset: hex string of the hash of the market base asset.
   quote_asset: hex string of the hash of the market quote asset.

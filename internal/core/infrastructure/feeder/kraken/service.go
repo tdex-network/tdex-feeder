@@ -3,6 +3,8 @@ package krakenfeeder
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/shopspring/decimal"
@@ -17,23 +19,33 @@ const (
 )
 
 type service struct {
-	conn *websocket.Conn
+	conn        *websocket.Conn
+	writeTicker *time.Ticker
+	lock        *sync.RWMutex
+	chLock      *sync.Mutex
 
 	marketByTicker map[string]ports.Market
+	lastPriceFeed  ports.PriceFeed
 	feedChan       chan ports.PriceFeed
 	quitChan       chan struct{}
 }
 
 func NewKrakenPriceFeeder(args ...interface{}) (ports.PriceFeeder, error) {
-	if len(args) != 1 {
+	if len(args) != 2 {
 		return nil, fmt.Errorf("invalid number of args")
 	}
 
-	markets, ok := args[0].([]ports.Market)
+	interval, ok := args[0].(int)
 	if !ok {
-		return nil, fmt.Errorf("unknown args type")
+		return nil, fmt.Errorf("unknown interval arg type")
 	}
 
+	markets, ok := args[1].([]ports.Market)
+	if !ok {
+		return nil, fmt.Errorf("unknown marktes arg type")
+	}
+
+	writeTicker := time.NewTicker(time.Duration(interval) * time.Millisecond)
 	mktTickers := make([]string, 0, len(markets))
 	mktByTicker := make(map[string]ports.Market)
 	for _, mkt := range markets {
@@ -49,24 +61,22 @@ func NewKrakenPriceFeeder(args ...interface{}) (ports.PriceFeeder, error) {
 
 	return &service{
 		conn:           conn,
+		writeTicker:    writeTicker,
+		lock:           &sync.RWMutex{},
+		chLock:         &sync.Mutex{},
 		marketByTicker: mktByTicker,
 		feedChan:       make(chan ports.PriceFeed),
 		quitChan:       make(chan struct{}, 1),
 	}, nil
 }
 
-func (k *service) Start() error {
-	defer func() {
-		close(k.feedChan)
-		close(k.quitChan)
-	}()
-
-	mustReconnect, err := k.start()
+func (s *service) Start() error {
+	mustReconnect, err := s.start()
 	for mustReconnect {
 		log.WithError(err).Warn("connection dropped unexpectedly. Trying to reconnect...")
 
-		tickers := make([]string, 0, len(k.marketByTicker))
-		for ticker := range k.marketByTicker {
+		tickers := make([]string, 0, len(s.marketByTicker))
+		for ticker := range s.marketByTicker {
 			tickers = append(tickers, ticker)
 		}
 
@@ -75,54 +85,92 @@ func (k *service) Start() error {
 		if err != nil {
 			return err
 		}
-		k.conn = conn
+		s.conn = conn
 
 		log.Debug("connection and subscriptions re-established. Restarting...")
-		mustReconnect, err = k.start()
+		mustReconnect, err = s.start()
 	}
 
 	return err
 }
 
-func (k *service) Stop() {
-	k.quitChan <- struct{}{}
+func (s *service) Stop() {
+	s.quitChan <- struct{}{}
 }
 
-func (k *service) FeedChan() chan ports.PriceFeed {
-	return k.feedChan
+func (s *service) FeedChan() chan ports.PriceFeed {
+	return s.feedChan
 }
 
-func (k *service) start() (mustReconnect bool, err error) {
+func (s *service) start() (mustReconnect bool, err error) {
 	defer func() {
 		if rec := recover(); rec != nil {
 			mustReconnect = true
 		}
 	}()
 
+	go func() {
+		for range s.writeTicker.C {
+			s.writeToFeedChan()
+		}
+	}()
+
 	for {
 		select {
-		case <-k.quitChan:
-			err = k.conn.Close()
+		case <-s.quitChan:
+			s.writeTicker.Stop()
+			s.closeChannels()
+			err = s.conn.Close()
 			return false, err
 		default:
-			_, message, err := k.conn.ReadMessage()
+			_, message, err := s.conn.ReadMessage()
 			if err != nil {
 				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 					panic(err)
 				}
 			}
 
-			priceFeed := k.parseFeed(message)
+			priceFeed := s.parseFeed(message)
 			if priceFeed == nil {
 				continue
 			}
 
-			k.feedChan <- priceFeed
+			s.writePriceFeed(priceFeed)
 		}
 	}
 }
 
-func (k *service) parseFeed(msg []byte) ports.PriceFeed {
+func (s *service) readPriceFeed() ports.PriceFeed {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+	return s.lastPriceFeed
+}
+
+func (s *service) writePriceFeed(priceFeed ports.PriceFeed) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.lastPriceFeed = priceFeed
+}
+
+func (s *service) writeToFeedChan() {
+	s.chLock.Lock()
+	defer s.chLock.Unlock()
+
+	priceFeed := s.readPriceFeed()
+	if priceFeed != nil {
+		s.feedChan <- priceFeed
+	}
+}
+
+func (s *service) closeChannels() {
+	s.chLock.Lock()
+	defer s.chLock.Unlock()
+
+	close(s.feedChan)
+	close(s.quitChan)
+}
+
+func (s *service) parseFeed(msg []byte) ports.PriceFeed {
 	var i []interface{}
 	if err := json.Unmarshal(msg, &i); err != nil {
 		return nil
@@ -136,7 +184,7 @@ func (k *service) parseFeed(msg []byte) ports.PriceFeed {
 		return nil
 	}
 
-	mkt, ok := k.marketByTicker[ticker]
+	mkt, ok := s.marketByTicker[ticker]
 	if !ok {
 		return nil
 	}
@@ -168,7 +216,7 @@ func (k *service) parseFeed(msg []byte) ports.PriceFeed {
 	return &priceFeed{
 		market: mkt,
 		price: &price{
-			basePrice:  basePrice.String(),
+			basePrice:  basePrice.StringFixed(8),
 			quotePrice: quotePrice.String(),
 		},
 	}
