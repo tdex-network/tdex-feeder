@@ -29,7 +29,7 @@ func TestService(t *testing.T) {
 }
 
 func newTestService() (application.Service, error) {
-	interval := 1000 // 1s interval
+	interval := 2000 // 2s interval
 	tickers := []string{"XBT/USDT", "XBT/EUR"}
 	markets := mockedMarkets(tickers)
 

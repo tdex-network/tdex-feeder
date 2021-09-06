@@ -24,10 +24,10 @@ type service struct {
 	lock        *sync.RWMutex
 	chLock      *sync.Mutex
 
-	marketByTicker map[string]ports.Market
-	lastPriceFeed  ports.PriceFeed
-	feedChan       chan ports.PriceFeed
-	quitChan       chan struct{}
+	marketByTicker      map[string]ports.Market
+	latestFeedsByTicker map[string]ports.PriceFeed
+	feedChan            chan ports.PriceFeed
+	quitChan            chan struct{}
 }
 
 func NewKrakenPriceFeeder(args ...interface{}) (ports.PriceFeeder, error) {
@@ -60,13 +60,14 @@ func NewKrakenPriceFeeder(args ...interface{}) (ports.PriceFeeder, error) {
 	conn.CloseHandler()
 
 	return &service{
-		conn:           conn,
-		writeTicker:    writeTicker,
-		lock:           &sync.RWMutex{},
-		chLock:         &sync.Mutex{},
-		marketByTicker: mktByTicker,
-		feedChan:       make(chan ports.PriceFeed),
-		quitChan:       make(chan struct{}, 1),
+		conn:                conn,
+		writeTicker:         writeTicker,
+		lock:                &sync.RWMutex{},
+		chLock:              &sync.Mutex{},
+		marketByTicker:      mktByTicker,
+		latestFeedsByTicker: make(map[string]ports.PriceFeed),
+		feedChan:            make(chan ports.PriceFeed),
+		quitChan:            make(chan struct{}, 1),
 	}, nil
 }
 
@@ -135,29 +136,34 @@ func (s *service) start() (mustReconnect bool, err error) {
 				continue
 			}
 
-			s.writePriceFeed(priceFeed)
+			s.writePriceFeed(priceFeed.GetMarket().Ticker(), priceFeed)
 		}
 	}
 }
 
-func (s *service) readPriceFeed() ports.PriceFeed {
+func (s *service) readPriceFeeds() []ports.PriceFeed {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
-	return s.lastPriceFeed
+
+	feeds := make([]ports.PriceFeed, 0, len(s.latestFeedsByTicker))
+	for _, priceFeed := range s.latestFeedsByTicker {
+		feeds = append(feeds, priceFeed)
+	}
+	return feeds
 }
 
-func (s *service) writePriceFeed(priceFeed ports.PriceFeed) {
+func (s *service) writePriceFeed(mktTicker string, priceFeed ports.PriceFeed) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	s.lastPriceFeed = priceFeed
+	s.latestFeedsByTicker[mktTicker] = priceFeed
 }
 
 func (s *service) writeToFeedChan() {
 	s.chLock.Lock()
 	defer s.chLock.Unlock()
 
-	priceFeed := s.readPriceFeed()
-	if priceFeed != nil {
+	priceFeeds := s.readPriceFeeds()
+	for _, priceFeed := range priceFeeds {
 		s.feedChan <- priceFeed
 	}
 }
