@@ -1,70 +1,85 @@
-// Copyright (c) 2020 The VulpemVentures developers
-
-// Feeder allows to connect an external price feed to the TDex Daemon to determine the current market price.
 package main
 
 import (
-	"encoding/json"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/tdex-network/tdex-feeder/config"
-	"github.com/tdex-network/tdex-feeder/internal/adapters"
-	"github.com/tdex-network/tdex-feeder/internal/application"
+
+	"github.com/tdex-network/tdex-feeder/internal/config"
+	"github.com/tdex-network/tdex-feeder/internal/core/application"
+	grpcclient "github.com/tdex-network/tdex-feeder/internal/core/infrastructure/client/grpc"
+	krakenfeeder "github.com/tdex-network/tdex-feeder/internal/core/infrastructure/feeder/kraken"
+	"github.com/tdex-network/tdex-feeder/internal/core/ports"
+)
+
+type indexedPriceFeeders map[string]func(args ...interface{}) (ports.PriceFeeder, error)
+
+func (i indexedPriceFeeders) supported() []string {
+	keys := make([]string, 0, len(i))
+	for k := range i {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+var (
+	priceFeeders = indexedPriceFeeders{
+		"kraken": krakenfeeder.NewKrakenPriceFeeder,
+	}
 )
 
 func main() {
-	// Interrupt Notification.
-	interrupt := make(chan os.Signal, 1)
-	signal.Notify(interrupt, syscall.SIGTERM, syscall.SIGINT)
+	cfg, err := config.NewConfigFromFile()
+	if err != nil {
+		log.WithError(err).Fatalf(
+			"error while reading config from file %s", config.GetConfigPath(),
+		)
+	}
 
-	// retrieve feeder service from config file
-	feeder := configFileToFeederService(config.GetConfigPath())
+	priceFeederFactory, ok := priceFeeders[cfg.PriceFeeder]
+	if !ok {
+		log.Fatalf(
+			"price feeder must be one of: '%s'", priceFeeders.supported(),
+		)
+	}
 
-	log.Info("Start the feeder...")
+	priceFeeder, err := priceFeederFactory(cfg.Interval, cfg.PortableMarkets())
+	if err != nil {
+		log.WithError(err).Fatal("error while initializing price feeder")
+	}
+
+	indexedTargets := make(application.IndexedTargetsByMarket)
+	for _, mkt := range cfg.Markets {
+		targets := make(map[string]ports.TdexClient)
+		for _, t := range mkt.CTargets {
+			target, err := grpcclient.NewGRPCClient(t.RPCAddress, t.MacaroonsPath, t.TLSCertPath)
+			if err != nil {
+				log.WithError(err).Fatalf(
+					"error while connecting with target %s", t.RPCAddress,
+				)
+			}
+			targets[target.RPCAddress()] = target
+		}
+		mktKey := ports.MarketKey(mkt)
+		indexedTargets[mktKey] = targets
+	}
+
+	app := application.NewService(priceFeeder, indexedTargets)
+
+	defer app.Stop()
+
+	log.Info("starting service")
 	go func() {
-		err := feeder.Start()
-		if err != nil {
-			log.Fatal(err)
+		if err := app.Start(); err != nil {
+			log.WithError(err).Fatal("service exited with error")
 		}
 	}()
 
-	// check for interupt
-	<-interrupt
-	log.Info("Shutting down the feeder...")
-	err := feeder.Stop()
-	log.Info("Feeder service stopped")
-	if err != nil {
-		log.Fatal(err)
-	}
-	os.Exit(0)
-}
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
+	<-sigChan
 
-func configFileToFeederService(configFilePath string) application.FeederService {
-	jsonFile, err := os.Open(configFilePath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer jsonFile.Close()
-
-	configBytes, err := ioutil.ReadAll(jsonFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	config := &adapters.Config{}
-	err = json.Unmarshal(configBytes, config)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	feeder, err := config.ToFeederService()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return feeder
+	log.Info("shutting down")
 }

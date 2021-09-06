@@ -4,9 +4,7 @@ Feeder allows to connect several price feeds to TDex Daemon(s) in order to autom
 
 ## Overview
 
-tdex-feeder connects to exchanges and retrieves market prices in order to consume the gRPC 
-interface exposed from tdex-deamon `UpdateMarketPrice`.
-
+tdex-feeder connects to exchanges and forwards market(s) price feeds to some tdex-daemon(s) by consuming its `UpdateMarketPrice` RPC.
 ![tdex-schema](./tdexfeeder.png)
 
 ## ⬇️ Run  Standalone
@@ -58,31 +56,36 @@ the `$HOME/config.json` is the path to the feederd configuration file.
 
 ### Build it yourself
 
-Builds feeder as static binary and runs the project with default configuration.
+Build feeder as static binary and run the project with default configuration.
 
-#### Linux
+```sh
+# build feeder as a static binary
+$ make build
 
-`make build-linux`
+# run the binary on Linux
+$ ./build/feederd-linux-amd64
 
-#### Mac
-
-`make build-mac`
-
-#### Run Linux
-
-`make run-linux`
+# run the binary on MacOS
+$ ./build/feederd-darwin-amd64
+```
 
 ##### Config file
 
 Rename the file `./config.example.json` into `./config.json` 
 and adapt if for your specific purpose. The default example
-connects to kraken socket and to a local instance of tdex-deamon.
+uses kraken as price feeder and forwards the feeds related to the BTC/USDT market to a local daemon (with mac auth disabled).
+
+NOTE: All entries of the JSON configuration file are mandatory if not otherwise expressed. Below you can find a brief explanation of the JSON object.
 
 ```
-daemon_endpoint: String with the address and port of gRPC host. Required.
-market: Json List with necessary markets informations. Required.
-  base_asset: String of the Hash of the base asset for gRPC request. Required.
-  quote_asset: String of the Hash of the quote asset for gRPC request. Required.
-  kraken_ticker: String with the ticker we want kraken to provide informations on. Required.
-  interval: the minimum time in milliseconds between two updateMarketPrice requests. Required. 
+price_feeder: service where to source prices (only "kraken" available for now).
+interval: the period in millisecond with which the feeder updates its target(s).
+markets: list with necessary markets info.
+  base_asset: hex string of the hash of the market base asset.
+  quote_asset: hex string of the hash of the market quote asset.
+  ticker: string of the corresponding feeder's market ticker.
+  targets: list of daemons to update for every feed received on this market.
+    rpc_address: string with hostname and port of the target daemon.
+    tls_cert_path: string path of the TLS cert file to use to connect with the target daemon. Optional.
+    macaroons_path: string path of the macaroon file to use to connect with the target daemon. Optional.
 ```

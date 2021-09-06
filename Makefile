@@ -1,6 +1,6 @@
 .PHONY: build run clean cov fmt help vet test shorttest integrationtest
 
-## build-arm: build binary for ARM
+## build: builds binary for all platforms
 build:
 	chmod u+x ./scripts/build
 	./scripts/build
@@ -15,7 +15,7 @@ cov:
 	@echo "Coverage..."
 	go test -cover ./...
 
-## fmt: Go Format
+## fmt: checks if code is well formatted
 fmt:
 	@echo "Gofmt..."
 	@if [ -n "$(gofmt -l .)" ]; then echo "Go code is not formatted"; exit 1; fi
@@ -26,24 +26,22 @@ help:
 	@echo "Usage: \n"
 	@sed -n 's/^##//p' ${MAKEFILE_LIST} | column -t -s ':' |  sed -e 's/^/ /'
 
-## run-linux: Run locally with default configuration
+# run: runs locally without building binary
 run: clean
-	export FEEDER_CONFIG_PATH=./config.example.json; \
 	export FEEDER_LOG_LEVEL=5; \
 	go run cmd/feederd/main.go
 
 ## vet: code analysis
 vet:
-	@echo "Vet..."
+	@echo "Vetting..."
 	@go vet ./...
 
-## test: runs go unit test with default values
-test: fmt shorttest
-
-shorttest: 
+## test: runs unit tests
+test: fmt
 	@echo "Testing..."
 	go test -v -count=1 -race -short ./...
 
+## integrationtest: run integration tests
 integrationtest:
 	export FEEDER_CONFIG_PATH="./config.test.json"; \
 	export FEEDER_LOG_LEVEL=5; \
