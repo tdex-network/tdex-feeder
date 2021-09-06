@@ -41,7 +41,7 @@ func newTestService() (application.Service, error) {
 	targetsByMarket := make(application.IndexedTargetsByMarket)
 	for _, mkt := range markets {
 		mktKey := ports.MarketKey(mkt)
-		targets := make(map[string]ports.TdexDaemon)
+		targets := make(map[string]ports.TdexClient)
 		daemons := mockedDaemons(2)
 		for _, d := range daemons {
 			targets[d.RPCAddress()] = d
@@ -64,8 +64,8 @@ func mockedMarkets(tickers []string) []ports.Market {
 	return markets
 }
 
-func mockedDaemons(num int) []ports.TdexDaemon {
-	daemons := make([]ports.TdexDaemon, 0, num)
+func mockedDaemons(num int) []ports.TdexClient {
+	daemons := make([]ports.TdexClient, 0, num)
 	for i := 0; i < num; i++ {
 		mockedDaemon := &mockDaemon{}
 		mockedDaemon.On("RPCAddress").Return(randomAddr())

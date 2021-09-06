@@ -28,9 +28,9 @@ type service struct {
 	operatorClient pboperator.OperatorClient
 }
 
-func NewGRPCDaemon(
+func NewGRPCClient(
 	addr, macaroonsPath, tlsCertPath string,
-) (ports.TdexDaemon, error) {
+) (ports.TdexClient, error) {
 	unlockerConn, err := createGRPCConn(addr, "", "")
 	if err != nil {
 		return nil, err

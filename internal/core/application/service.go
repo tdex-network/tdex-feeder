@@ -13,11 +13,11 @@ type Service interface {
 	Stop()
 }
 
-type IndexedTargetsByMarket map[string]map[string]ports.TdexDaemon
+type IndexedTargetsByMarket map[string]map[string]ports.TdexClient
 
 type service struct {
 	priceFeeder      ports.PriceFeeder
-	targetsByAddress map[string]ports.TdexDaemon
+	targetsByAddress map[string]ports.TdexClient
 	targetsByMarket  IndexedTargetsByMarket
 
 	lock *sync.Mutex
@@ -26,7 +26,7 @@ type service struct {
 func NewService(
 	priceFeeder ports.PriceFeeder, targetsByMarket IndexedTargetsByMarket,
 ) Service {
-	targetsByAddress := make(map[string]ports.TdexDaemon)
+	targetsByAddress := make(map[string]ports.TdexClient)
 	for _, targets := range targetsByMarket {
 		for _, t := range targets {
 			targetsByAddress[t.RPCAddress()] = t

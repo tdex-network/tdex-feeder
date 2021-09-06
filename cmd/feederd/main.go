@@ -9,7 +9,7 @@ import (
 
 	"github.com/tdex-network/tdex-feeder/internal/config"
 	"github.com/tdex-network/tdex-feeder/internal/core/application"
-	grpcdaemon "github.com/tdex-network/tdex-feeder/internal/core/infrastructure/daemon/grpc"
+	grpcclient "github.com/tdex-network/tdex-feeder/internal/core/infrastructure/client/grpc"
 	krakenfeeder "github.com/tdex-network/tdex-feeder/internal/core/infrastructure/feeder/kraken"
 	"github.com/tdex-network/tdex-feeder/internal/core/ports"
 )
@@ -52,9 +52,9 @@ func main() {
 
 	indexedTargets := make(application.IndexedTargetsByMarket)
 	for _, mkt := range cfg.Markets {
-		targets := make(map[string]ports.TdexDaemon)
+		targets := make(map[string]ports.TdexClient)
 		for _, t := range mkt.CTargets {
-			target, err := grpcdaemon.NewGRPCDaemon(t.RPCAddress, t.MacaroonsPath, t.TLSCertPath)
+			target, err := grpcclient.NewGRPCClient(t.RPCAddress, t.MacaroonsPath, t.TLSCertPath)
 			if err != nil {
 				log.WithError(err).Fatalf(
 					"error while connecting with target %s", t.RPCAddress,

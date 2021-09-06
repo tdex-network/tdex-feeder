@@ -7,7 +7,7 @@ type PriceFeeder interface {
 	FeedChan() chan PriceFeed
 }
 
-type TdexDaemon interface {
+type TdexClient interface {
 	RPCAddress() string
 
 	IsReady() (bool, error)
