@@ -31,7 +31,7 @@ type service struct {
 func NewGRPCClient(
 	addr, macaroonsPath, tlsCertPath string,
 ) (ports.TdexClient, error) {
-	unlockerConn, err := createGRPCConn(addr, "", "")
+	unlockerConn, err := createGRPCConn(addr, macaroonsPath, tlsCertPath)
 	if err != nil {
 		return nil, err
 	}
