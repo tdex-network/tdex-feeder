@@ -54,11 +54,21 @@ func main() {
 	for _, mkt := range cfg.Markets {
 		targets := make(map[string]ports.TdexClient)
 		for _, t := range mkt.CTargets {
-			target, err := grpcclient.NewGRPCClient(t.RPCAddress, t.MacaroonsPath, t.TLSCertPath)
-			if err != nil {
-				log.WithError(err).Fatalf(
-					"error while connecting with target %s", t.RPCAddress,
-				)
+			var target ports.TdexClient
+			if t.TdexdconnectURL != "" {
+				target, err = grpcclient.NewGRPCClientFromURL(t.TdexdconnectURL)
+				if err != nil {
+					log.WithError(err).Fatalf(
+						"error while connecting with target with url %s", t.TdexdconnectURL,
+					)
+				}
+			} else {
+				target, err = grpcclient.NewGRPCClient(t.RPCAddress, t.MacaroonsPath, t.TLSCertPath)
+				if err != nil {
+					log.WithError(err).Fatalf(
+						"error while connecting with target %s", t.RPCAddress,
+					)
+				}
 			}
 			targets[target.RPCAddress()] = target
 		}
