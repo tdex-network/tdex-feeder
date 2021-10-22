@@ -46,7 +46,14 @@ func TestService(t *testing.T) {
 
 func newTestService() (ports.PriceFeeder, error) {
 	markets := mockedMarkets(tickers)
-	return krakenfeeder.NewKrakenPriceFeeder(interval, markets)
+	svc, err := krakenfeeder.NewKrakenPriceFeeder(interval)
+	if err != nil {
+		return nil, err
+	}
+	if err := svc.SubscribeMarkets(markets); err != nil {
+		return nil, err
+	}
+	return svc, nil
 }
 
 func mockedMarkets(tickers []string) []ports.Market {

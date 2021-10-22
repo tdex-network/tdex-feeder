@@ -85,6 +85,25 @@ func (s *service) UpdateMarketPrice(
 	return err
 }
 
+func (s *service) ListMarkets() ([]ports.Market, error) {
+	res, err := s.operatorClient.ListMarkets(
+		context.Background(), &pboperator.ListMarketsRequest{},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	mkts := res.GetMarkets()
+	markets := make([]ports.Market, 0, len(mkts))
+	for _, mkt := range mkts {
+		markets = append(markets, market{
+			baseAsset:  mkt.GetMarket().GetBaseAsset(),
+			quoteAsset: mkt.GetMarket().GetQuoteAsset(),
+		})
+	}
+	return markets, nil
+}
+
 func createGRPCConn(daemonEndpoint, macPath, certPath string) (*grpc.ClientConn, error) {
 	opts := []grpc.DialOption{grpc.WithDefaultCallOptions(maxMsgRecvSize)}
 

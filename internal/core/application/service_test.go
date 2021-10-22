@@ -33,8 +33,12 @@ func newTestService() (application.Service, error) {
 	tickers := []string{"XBT/USDT", "XBT/EUR"}
 	markets := mockedMarkets(tickers)
 
-	priceFeeder, err := krakenfeeder.NewKrakenPriceFeeder(interval, markets)
+	priceFeeder, err := krakenfeeder.NewKrakenPriceFeeder(interval)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := priceFeeder.SubscribeMarkets(markets); err != nil {
 		return nil, err
 	}
 
@@ -116,6 +120,16 @@ func (m mockDaemon) IsReady() (bool, error) {
 func (m mockDaemon) UpdateMarketPrice(mkt ports.Market, prc ports.Price) error {
 	args := m.Called(mkt, prc)
 	return args.Error(0)
+}
+
+func (m mockDaemon) ListMarkets() ([]ports.Market, error) {
+	args := m.Called()
+
+	var res []ports.Market
+	if a := args.Get(0); a != nil {
+		res = a.([]ports.Market)
+	}
+	return res, args.Error(1)
 }
 
 func randomAddr() string {

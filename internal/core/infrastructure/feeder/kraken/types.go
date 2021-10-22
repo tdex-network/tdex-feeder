@@ -29,3 +29,21 @@ func (p *priceFeed) GetMarket() ports.Market {
 func (p *priceFeed) GetPrice() ports.Price {
 	return p.price
 }
+
+type market struct {
+	baseAsset  string
+	quoteAsset string
+	ticker     string
+}
+
+func (m market) BaseAsset() string {
+	return m.baseAsset
+}
+
+func (m market) QuoteAsset() string {
+	return m.quoteAsset
+}
+
+func (m market) Ticker() string {
+	return m.ticker
+}
