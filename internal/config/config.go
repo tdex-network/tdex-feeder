@@ -1,7 +1,10 @@
 package config
 
 import (
+	"fmt"
+
 	"github.com/spf13/viper"
+	"github.com/tdex-network/tdex-feeder/internal/core/ports"
 )
 
 const (
@@ -29,9 +32,15 @@ func init() {
 	}
 }
 
+type Config struct {
+	PriceFeeder      string              `mapstructure:"price_feeder"`
+	Interval         int                 `mapstructure:"interval"`
+	Targets          []Target            `mapstructure:"targets"`
+	WellKnownMarkets map[string][]Market `mapstructure:"well_known_markets"`
+}
+
 func GetConfigPath() string {
-	configPath := viper.GetString(ConfigKey)
-	return configPath
+	return viper.ConfigFileUsed()
 }
 
 func NewConfigFromFile() (Config, error) {
@@ -46,4 +55,48 @@ func NewConfigFromFile() (Config, error) {
 		return Config{}, err
 	}
 	return cfg, nil
+}
+
+func (c Config) Validate() error {
+	if c.PriceFeeder == "" {
+		return fmt.Errorf("price_feeder must not be nil")
+	}
+	if c.Interval <= 0 {
+		return fmt.Errorf("interval must be a positive value")
+	}
+	if len(c.Targets) <= 0 {
+		return fmt.Errorf("targets must not be empty")
+	}
+	for _, t := range c.Targets {
+		if err := t.validate(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c Config) MergeWellKnownMarkets(
+	priceFeeder string, markets []ports.Market,
+) error {
+	mkts := make([]Market, 0, len(markets))
+	for _, m := range markets {
+		mkt := Market{m.BaseAsset(), m.QuoteAsset(), m.Ticker()}
+		mkts = append(mkts, mkt)
+	}
+
+	if c.WellKnownMarkets == nil {
+		c.WellKnownMarkets = make(map[string][]Market)
+	}
+	c.WellKnownMarkets[priceFeeder] = mkts
+
+	raw := make(map[string][]map[string]string)
+	for feeder, markets := range c.WellKnownMarkets {
+		raw[feeder] = make([]map[string]string, 0, len(markets))
+		for _, m := range markets {
+			raw[feeder] = append(raw[feeder], m.RawMap())
+		}
+	}
+
+	viper.Set("well_known_markets", raw)
+	return viper.WriteConfig()
 }
