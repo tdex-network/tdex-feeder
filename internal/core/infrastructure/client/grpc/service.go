@@ -113,7 +113,28 @@ func (s *service) UpdateMarketPrice(
 	return err
 }
 
-func createGRPCConn(daemonEndpoint string, macBytes, certBytes []byte) (*grpc.ClientConn, error) {
+func (s *service) ListMarkets() ([]ports.Market, error) {
+	res, err := s.operatorClient.ListMarkets(
+		context.Background(), &pboperator.ListMarketsRequest{},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	mkts := res.GetMarkets()
+	markets := make([]ports.Market, 0, len(mkts))
+	for _, mkt := range mkts {
+		markets = append(markets, market{
+			baseAsset:  mkt.GetMarket().GetBaseAsset(),
+			quoteAsset: mkt.GetMarket().GetQuoteAsset(),
+		})
+	}
+	return markets, nil
+}
+
+func createGRPCConn(
+	daemonEndpoint string, macBytes, certBytes []byte,
+) (*grpc.ClientConn, error) {
 	opts := []grpc.DialOption{grpc.WithDefaultCallOptions(maxMsgRecvSize)}
 
 	if len(macBytes) <= 0 {
@@ -147,7 +168,9 @@ func createGRPCConn(daemonEndpoint string, macBytes, certBytes []byte) (*grpc.Cl
 	return conn, nil
 }
 
-func createGRPCConnFromFile(daemonEndpoint, macPath, certPath string) (*grpc.ClientConn, error) {
+func createGRPCConnFromFile(
+	daemonEndpoint, macPath, certPath string,
+) (*grpc.ClientConn, error) {
 	opts := []grpc.DialOption{grpc.WithDefaultCallOptions(maxMsgRecvSize)}
 
 	if len(macPath) <= 0 {

@@ -45,35 +45,80 @@ func main() {
 		)
 	}
 
-	priceFeeder, err := priceFeederFactory(cfg.Interval, cfg.PortableMarkets())
+	priceFeeder, err := priceFeederFactory(cfg.Interval)
 	if err != nil {
 		log.WithError(err).Fatal("error while initializing price feeder")
 	}
 
+	wellKnownMarkets := priceFeeder.WellKnownMarkets()
+	knownMarketsExistInConfig := len(cfg.WellKnownMarkets) > 0 && len(cfg.WellKnownMarkets[cfg.PriceFeeder]) > 0
+	if knownMarketsExistInConfig {
+		for _, mkt := range cfg.WellKnownMarkets[cfg.PriceFeeder] {
+			wellKnownMarkets = append(wellKnownMarkets, mkt)
+		}
+	}
+
 	indexedTargets := make(application.IndexedTargetsByMarket)
-	for _, mkt := range cfg.Markets {
-		targets := make(map[string]ports.TdexClient)
-		for _, t := range mkt.CTargets {
-			var target ports.TdexClient
-			if t.TdexdconnectURL != "" {
-				target, err = grpcclient.NewGRPCClientFromURL(t.TdexdconnectURL)
-				if err != nil {
-					log.WithError(err).Fatalf(
-						"error while connecting with target with url %s", t.TdexdconnectURL,
-					)
-				}
-			} else {
-				target, err = grpcclient.NewGRPCClient(t.RPCAddress, t.MacaroonsPath, t.TLSCertPath)
-				if err != nil {
-					log.WithError(err).Fatalf(
-						"error while connecting with target %s", t.RPCAddress,
-					)
+	marketsByKey := make(map[string]ports.Market)
+	for _, t := range cfg.Targets {
+		var target ports.TdexClient
+		if t.TdexdconnectURL != "" {
+			target, err = grpcclient.NewGRPCClientFromURL(t.TdexdconnectURL)
+			if err != nil {
+				log.WithError(err).Fatalf(
+					"error while connecting with target with url %s", t.TdexdconnectURL,
+				)
+			}
+		} else {
+			target, err = grpcclient.NewGRPCClient(t.RPCAddress, t.MacaroonsPath, t.TLSCertPath)
+			if err != nil {
+				log.WithError(err).Fatalf(
+					"error while connecting with target %s", t.RPCAddress,
+				)
+			}
+		}
+		markets, err := target.ListMarkets()
+		if err != nil {
+			log.WithError(err).Fatalf(
+				"failed to list markets for target %s", t.RPCAddress,
+			)
+		}
+
+		for _, m := range markets {
+			for _, wellKnownMarket := range wellKnownMarkets {
+				if m.BaseAsset() == wellKnownMarket.BaseAsset() && m.QuoteAsset() == wellKnownMarket.QuoteAsset() {
+					mktKey := ports.MarketKey(wellKnownMarket)
+					if indexedTargets[mktKey] == nil {
+						indexedTargets[mktKey] = make(map[string]ports.TdexClient)
+					}
+					indexedTargets[mktKey][t.RPCAddress] = target
+					marketsByKey[mktKey] = wellKnownMarket
 				}
 			}
-			targets[target.RPCAddress()] = target
 		}
-		mktKey := ports.MarketKey(mkt)
-		indexedTargets[mktKey] = targets
+	}
+
+	markets := make([]ports.Market, 0, len(marketsByKey))
+	for _, mkt := range marketsByKey {
+		markets = append(markets, mkt)
+	}
+
+	if err := priceFeeder.SubscribeMarkets(markets); err != nil {
+		log.WithError(err).Fatalf(
+			"failed to subscribe price feeder %s to markets", cfg.PriceFeeder,
+		)
+	}
+
+	if !knownMarketsExistInConfig {
+		log.Info("writing price feeder's known markets to config")
+
+		if err := cfg.MergeWellKnownMarkets(
+			cfg.PriceFeeder, wellKnownMarkets,
+		); err != nil {
+			log.WithError(err).Fatal(
+				"failed to write well known markets to config file",
+			)
+		}
 	}
 
 	app := application.NewService(priceFeeder, indexedTargets)

@@ -18,6 +18,21 @@ const (
 	KrakenWebSocketURL = "ws.kraken.com"
 )
 
+var (
+	wellKnownMarkets = []ports.Market{
+		market{
+			baseAsset:  "6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d",
+			quoteAsset: "ce091c998b83c78bb71a632313ba3760f1763d9cfcffae02258ffa9865a37bd2",
+			ticker:     "XBT/USDT",
+		},
+		market{
+			baseAsset:  "6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d",
+			quoteAsset: "0e99c1a6da379d1f4151fb9df90449d40d0608f6cb33a5bcbfc8c265f42bab0a",
+			ticker:     "XBT/CAD",
+		},
+	}
+)
+
 type service struct {
 	conn        *websocket.Conn
 	writeTicker *time.Ticker
@@ -31,7 +46,7 @@ type service struct {
 }
 
 func NewKrakenPriceFeeder(args ...interface{}) (ports.PriceFeeder, error) {
-	if len(args) != 2 {
+	if len(args) != 1 {
 		return nil, fmt.Errorf("invalid number of args")
 	}
 
@@ -39,13 +54,23 @@ func NewKrakenPriceFeeder(args ...interface{}) (ports.PriceFeeder, error) {
 	if !ok {
 		return nil, fmt.Errorf("unknown interval arg type")
 	}
-
-	markets, ok := args[1].([]ports.Market)
-	if !ok {
-		return nil, fmt.Errorf("unknown marktes arg type")
-	}
-
 	writeTicker := time.NewTicker(time.Duration(interval) * time.Millisecond)
+
+	return &service{
+		writeTicker:         writeTicker,
+		lock:                &sync.RWMutex{},
+		chLock:              &sync.Mutex{},
+		latestFeedsByTicker: make(map[string]ports.PriceFeed),
+		feedChan:            make(chan ports.PriceFeed),
+		quitChan:            make(chan struct{}, 1),
+	}, nil
+}
+
+func (s *service) WellKnownMarkets() []ports.Market {
+	return wellKnownMarkets
+}
+
+func (s *service) SubscribeMarkets(markets []ports.Market) error {
 	mktTickers := make([]string, 0, len(markets))
 	mktByTicker := make(map[string]ports.Market)
 	for _, mkt := range markets {
@@ -55,20 +80,12 @@ func NewKrakenPriceFeeder(args ...interface{}) (ports.PriceFeeder, error) {
 
 	conn, err := connectAndSubscribe(mktTickers)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	conn.CloseHandler()
 
-	return &service{
-		conn:                conn,
-		writeTicker:         writeTicker,
-		lock:                &sync.RWMutex{},
-		chLock:              &sync.Mutex{},
-		marketByTicker:      mktByTicker,
-		latestFeedsByTicker: make(map[string]ports.PriceFeed),
-		feedChan:            make(chan ports.PriceFeed),
-		quitChan:            make(chan struct{}, 1),
-	}, nil
+	s.conn = conn
+	s.marketByTicker = mktByTicker
+	return nil
 }
 
 func (s *service) Start() error {
