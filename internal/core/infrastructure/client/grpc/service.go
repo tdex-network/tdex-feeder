@@ -2,11 +2,13 @@ package grpcdaemon
 
 import (
 	"context"
+	"crypto/x509"
 	"fmt"
 	"io/ioutil"
 	"strconv"
 
 	"github.com/tdex-network/tdex-daemon/pkg/macaroons"
+	"github.com/tdex-network/tdex-daemon/pkg/tdexdconnect"
 	"github.com/tdex-network/tdex-feeder/internal/core/ports"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -31,12 +33,38 @@ type service struct {
 func NewGRPCClient(
 	addr, macaroonsPath, tlsCertPath string,
 ) (ports.TdexClient, error) {
-	unlockerConn, err := createGRPCConn(addr, macaroonsPath, tlsCertPath)
+	unlockerConn, err := createGRPCConnFromFile(addr, macaroonsPath, tlsCertPath)
 	if err != nil {
 		return nil, err
 	}
 
-	operatorConn, err := createGRPCConn(addr, macaroonsPath, tlsCertPath)
+	operatorConn, err := createGRPCConnFromFile(addr, macaroonsPath, tlsCertPath)
+	if err != nil {
+		return nil, err
+	}
+
+	unlockerClient := pbunlocker.NewWalletUnlockerClient(unlockerConn)
+	operatorClient := pboperator.NewOperatorClient(operatorConn)
+
+	return &service{
+		rpcAddress:     addr,
+		unlockerClient: unlockerClient,
+		operatorClient: operatorClient,
+	}, nil
+}
+
+func NewGRPCClientFromURL(url string) (ports.TdexClient, error) {
+	addr, tlsCert, macaroon, err := tdexdconnect.Decode(url)
+	if err != nil {
+		return nil, err
+	}
+
+	unlockerConn, err := createGRPCConn(addr, macaroon, tlsCert)
+	if err != nil {
+		return nil, err
+	}
+
+	operatorConn, err := createGRPCConn(addr, macaroon, tlsCert)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +132,45 @@ func (s *service) ListMarkets() ([]ports.Market, error) {
 	return markets, nil
 }
 
-func createGRPCConn(daemonEndpoint, macPath, certPath string) (*grpc.ClientConn, error) {
+func createGRPCConn(
+	daemonEndpoint string, macBytes, certBytes []byte,
+) (*grpc.ClientConn, error) {
+	opts := []grpc.DialOption{grpc.WithDefaultCallOptions(maxMsgRecvSize)}
+
+	if len(macBytes) <= 0 {
+		opts = append(opts, grpc.WithInsecure())
+	} else {
+		// TLS credentials
+		cert, err := x509.ParseCertificate(certBytes)
+		if err != nil {
+			return nil, fmt.Errorf("could not parse TLS certificate: %s", err)
+		}
+		cp := x509.NewCertPool()
+		cp.AddCert(cert)
+		tlsCreds := credentials.NewClientTLSFromCert(cp, "")
+
+		// macaroons credentials
+		mac := &macaroon.Macaroon{}
+		if err := mac.UnmarshalBinary(macBytes); err != nil {
+			return nil, fmt.Errorf("could not parse macaroon: %s", err)
+		}
+		macCreds := macaroons.NewMacaroonCredential(mac, true)
+
+		opts = append(opts, grpc.WithPerRPCCredentials(macCreds))
+		opts = append(opts, grpc.WithTransportCredentials(tlsCreds))
+	}
+
+	conn, err := grpc.Dial(daemonEndpoint, opts...)
+	if err != nil {
+		return nil, fmt.Errorf("unable to connect to RPC server: %v", err)
+	}
+
+	return conn, nil
+}
+
+func createGRPCConnFromFile(
+	daemonEndpoint, macPath, certPath string,
+) (*grpc.ClientConn, error) {
 	opts := []grpc.DialOption{grpc.WithDefaultCallOptions(maxMsgRecvSize)}
 
 	if len(macPath) <= 0 {
