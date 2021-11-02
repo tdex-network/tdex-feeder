@@ -4,16 +4,23 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"github.com/tdex-network/tdex-daemon/pkg/tdexdconnect"
 	"github.com/tdex-network/tdex-feeder/internal/core/ports"
 )
 
 type Target struct {
-	RPCAddress    string `mapstructure:"rpc_address"`
-	TLSCertPath   string `mapstructure:"tls_cert_path,omitempty"`
-	MacaroonsPath string `mapstructure:"macaroons_path,omitempty"`
+	RPCAddress      string `mapstructure:"rpc_address"`
+	TLSCertPath     string `mapstructure:"tls_cert_path,omitempty"`
+	MacaroonsPath   string `mapstructure:"macaroons_path,omitempty"`
+	TdexdconnectURL string `mapstructure:"tdexdconnect_url,omitempty"`
 }
 
 func (t Target) validate() error {
+	if url := t.TdexdconnectURL; url != "" {
+		_, _, _, err := tdexdconnect.Decode(url)
+		return err
+	}
+
 	if t.RPCAddress == "" {
 		return fmt.Errorf("target rpc address must not be nil")
 	}
