@@ -248,5 +248,23 @@ func connectAndSubscribe(mktTickers []string) (*websocket.Conn, error) {
 		return nil, fmt.Errorf("cannot subscribe to given markets: %s", err)
 	}
 
+	for {
+		msg := make(map[string]interface{})
+		if err := conn.ReadJSON(&msg); err != nil {
+			return nil, fmt.Errorf(
+				"cannot read response of subscription to markets: %s", err,
+			)
+		}
+
+		msgType := msg["type"].(string)
+		if msgType == "error" {
+			return nil, fmt.Errorf(msg["reason"].(string))
+		}
+
+		if msgType == "subscriptions" {
+			break
+		}
+	}
+
 	return conn, nil
 }
