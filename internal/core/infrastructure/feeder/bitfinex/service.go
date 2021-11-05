@@ -263,13 +263,17 @@ func connectAndSubscribe(
 		}
 
 		for {
-			_, msg, err := conn.ReadMessage()
-			if err != nil {
+			msg := make(map[string]interface{})
+			if err := conn.ReadJSON(&msg); err != nil {
 				return nil, nil, fmt.Errorf(
 					"cannot read response of subscribtion for market %s: %s", ticker, err,
 				)
 			}
-
+			if msg["event"].(string) == "error" {
+				return nil, nil, fmt.Errorf(
+					"%s %s", msg["pair"].(string), msg["msg"].(string),
+				)
+			}
 			chanId := parseSubscriptionResponse(msg, ticker)
 			if chanId == -1 {
 				continue
@@ -282,11 +286,7 @@ func connectAndSubscribe(
 	return conn, tickersByChanID, nil
 }
 
-func parseSubscriptionResponse(msg []byte, ticker string) int {
-	m := make(map[string]interface{})
-	if err := json.Unmarshal(msg, &m); err != nil {
-		return -1
-	}
+func parseSubscriptionResponse(m map[string]interface{}, ticker string) int {
 	if e, ok := m["event"].(string); !ok || e != "subscribed" {
 		return -1
 	}
