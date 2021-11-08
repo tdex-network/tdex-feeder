@@ -263,18 +263,17 @@ func connectAndSubscribe(
 		}
 
 		for {
-			msg := make(map[string]interface{})
-			if err := conn.ReadJSON(&msg); err != nil {
+			_, msg, err := conn.ReadMessage()
+			if err != nil {
 				return nil, nil, fmt.Errorf(
 					"cannot read response of subscribtion for market %s: %s", ticker, err,
 				)
 			}
-			if msg["event"].(string) == "error" {
-				return nil, nil, fmt.Errorf(
-					"%s %s", msg["pair"].(string), msg["msg"].(string),
-				)
+
+			chanId, err := parseSubscriptionResponse(msg, ticker)
+			if err != nil {
+				return nil, nil, err
 			}
-			chanId := parseSubscriptionResponse(msg, ticker)
 			if chanId == -1 {
 				continue
 			}
@@ -286,15 +285,26 @@ func connectAndSubscribe(
 	return conn, tickersByChanID, nil
 }
 
-func parseSubscriptionResponse(m map[string]interface{}, ticker string) int {
-	if e, ok := m["event"].(string); !ok || e != "subscribed" {
-		return -1
+func parseSubscriptionResponse(msg []byte, ticker string) (int, error) {
+	m := make(map[string]interface{})
+	if err := json.Unmarshal(msg, &m); err != nil {
+		return -1, nil
+	}
+	e, ok := m["event"].(string)
+	if !ok {
+		return -1, nil
+	}
+	if e == "error" {
+		return -1, fmt.Errorf("%s %s", m["pair"].(string), m["msg"].(string))
+	}
+	if e != "subscribed" {
+		return -1, nil
 	}
 	if c, ok := m["channel"].(string); !ok || c != "ticker" {
-		return -1
+		return -1, nil
 	}
 	if t, ok := m["pair"].(string); !ok || t != ticker {
-		return -1
+		return -1, nil
 	}
-	return int(m["chanId"].(float64))
+	return int(m["chanId"].(float64)), nil
 }
