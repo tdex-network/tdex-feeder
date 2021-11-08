@@ -11,6 +11,7 @@ import (
 	"github.com/tdex-network/tdex-feeder/internal/core/application"
 	grpcclient "github.com/tdex-network/tdex-feeder/internal/core/infrastructure/client/grpc"
 	bitfinexfeeder "github.com/tdex-network/tdex-feeder/internal/core/infrastructure/feeder/bitfinex"
+	coinbasefeeder "github.com/tdex-network/tdex-feeder/internal/core/infrastructure/feeder/coinbase"
 	krakenfeeder "github.com/tdex-network/tdex-feeder/internal/core/infrastructure/feeder/kraken"
 	"github.com/tdex-network/tdex-feeder/internal/core/ports"
 )
@@ -28,6 +29,7 @@ func (i indexedPriceFeeders) supported() []string {
 var (
 	priceFeeders = indexedPriceFeeders{
 		"kraken":   krakenfeeder.NewKrakenPriceFeeder,
+		"coinbase": coinbasefeeder.NewCoinbasePriceFeeder,
 		"bitfinex": bitfinexfeeder.NewBitfinexPriceFeeder,
 	}
 )
