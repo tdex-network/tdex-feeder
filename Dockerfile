@@ -1,5 +1,8 @@
 FROM golang:1.15.5-buster AS builder
 
+ARG TARGETOS
+ARG TARGETARCH
+
 WORKDIR /tdex-feeder
 
 COPY go.mod .
@@ -8,7 +11,7 @@ RUN go mod download
 
 COPY . .
 
-RUN GOOS=linux GOARCH=amd64 go build -o feederd-linux cmd/feederd/main.go
+RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o feederd-linux cmd/feederd/main.go
 
 WORKDIR /build
 
