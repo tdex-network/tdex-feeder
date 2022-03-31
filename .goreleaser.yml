@@ -8,7 +8,7 @@ builds:
       - darwin
     goarch:
       - amd64
-      - arm64
+      # - arm64
     binary: feederd
 checksum:
   name_template: "checksums.txt"
@@ -67,39 +67,39 @@ dockers:
       - cmd
   
   # arm64
-  - skip_push: false
-    dockerfile: Dockerfile
-    use: buildx
-    # image templates
-    image_templates:
-      - "ghcr.io/tdex-network/feederd:{{ .Tag }}-arm64v8"
-    # GOOS of the built binaries/packages that should be used.
-    goos: linux
-    # GOARCH of the built binaries/packages that should be used.
-    goarch: arm64
-    # Template of the docker build flags.
-    build_flag_templates:
-      - "--platform=linux/arm64/v8"
-      - "--pull"
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.title={{.ProjectName}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-    extra_files:
-      - go.mod
-      - go.sum
-      - internal
-      - cmd
+  # - skip_push: false
+  #   dockerfile: Dockerfile
+  #   use: buildx
+  #   # image templates
+  #   image_templates:
+  #     - "ghcr.io/tdex-network/feederd:{{ .Tag }}-arm64v8"
+  #   # GOOS of the built binaries/packages that should be used.
+  #   goos: linux
+  #   # GOARCH of the built binaries/packages that should be used.
+  #   goarch: arm64
+  #   # Template of the docker build flags.
+  #   build_flag_templates:
+  #     - "--platform=linux/arm64/v8"
+  #     - "--pull"
+  #     - "--label=org.opencontainers.image.created={{.Date}}"
+  #     - "--label=org.opencontainers.image.title={{.ProjectName}}"
+  #     - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+  #     - "--label=org.opencontainers.image.version={{.Version}}"
+  #   extra_files:
+  #     - go.mod
+  #     - go.sum
+  #     - internal
+  #     - cmd
 
 docker_manifests:
   - name_template: ghcr.io/tdex-network/feederd:{{ .Tag }}
     image_templates:
     - ghcr.io/tdex-network/feederd:{{ .Tag }}-amd64
-    - ghcr.io/tdex-network/feederd:{{ .Tag }}-arm64v8
+    # - ghcr.io/tdex-network/feederd:{{ .Tag }}-arm64v8
     skip_push: false
 
   - name_template: ghcr.io/tdex-network/feederd:latest
     image_templates:
     - ghcr.io/tdex-network/feederd:{{ .Tag }}-amd64
-    - ghcr.io/tdex-network/feederd:{{ .Tag }}-arm64v8
+    # - ghcr.io/tdex-network/feederd:{{ .Tag }}-arm64v8
     skip_push: auto
