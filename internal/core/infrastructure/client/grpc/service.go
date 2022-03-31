@@ -14,9 +14,8 @@ import (
 	"google.golang.org/grpc/credentials"
 	"gopkg.in/macaroon.v2"
 
-	pboperator "github.com/tdex-network/tdex-daemon/api-spec/protobuf/gen/operator"
-	pbunlocker "github.com/tdex-network/tdex-daemon/api-spec/protobuf/gen/walletunlocker"
-	pbtypes "github.com/tdex-network/tdex-protobuf/generated/go/types"
+	pb "github.com/tdex-network/tdex-daemon/api-spec/protobuf/gen/go/tdex-daemon/v1"
+	pbtypes "github.com/tdex-network/tdex-daemon/api-spec/protobuf/gen/go/tdex/v1"
 )
 
 var (
@@ -26,8 +25,8 @@ var (
 type service struct {
 	rpcAddress string
 
-	unlockerClient pbunlocker.WalletUnlockerClient
-	operatorClient pboperator.OperatorClient
+	unlockerClient pb.WalletUnlockerClient
+	operatorClient pb.OperatorClient
 }
 
 func NewGRPCClient(
@@ -43,8 +42,8 @@ func NewGRPCClient(
 		return nil, err
 	}
 
-	unlockerClient := pbunlocker.NewWalletUnlockerClient(unlockerConn)
-	operatorClient := pboperator.NewOperatorClient(operatorConn)
+	unlockerClient := pb.NewWalletUnlockerClient(unlockerConn)
+	operatorClient := pb.NewOperatorClient(operatorConn)
 
 	return &service{
 		rpcAddress:     addr,
@@ -69,8 +68,8 @@ func NewGRPCClientFromURL(url string) (ports.TdexClient, error) {
 		return nil, err
 	}
 
-	unlockerClient := pbunlocker.NewWalletUnlockerClient(unlockerConn)
-	operatorClient := pboperator.NewOperatorClient(operatorConn)
+	unlockerClient := pb.NewWalletUnlockerClient(unlockerConn)
+	operatorClient := pb.NewOperatorClient(operatorConn)
 
 	return &service{
 		rpcAddress:     addr,
@@ -85,7 +84,7 @@ func (s *service) RPCAddress() string {
 
 func (s *service) IsReady() (bool, error) {
 	res, err := s.unlockerClient.IsReady(
-		context.Background(), &pbunlocker.IsReadyRequest{},
+		context.Background(), &pb.IsReadyRequest{},
 	)
 	if err != nil {
 		return false, err
@@ -99,14 +98,14 @@ func (s *service) UpdateMarketPrice(
 	basePrice, _ := strconv.ParseFloat(price.BasePrice(), 32)
 	quotePrice, _ := strconv.ParseFloat(price.QuotePrice(), 32)
 	_, err := s.operatorClient.UpdateMarketPrice(
-		context.Background(), &pboperator.UpdateMarketPriceRequest{
+		context.Background(), &pb.UpdateMarketPriceRequest{
 			Market: &pbtypes.Market{
 				BaseAsset:  mkt.BaseAsset(),
 				QuoteAsset: mkt.QuoteAsset(),
 			},
 			Price: &pbtypes.Price{
-				BasePrice:  float32(basePrice),
-				QuotePrice: float32(quotePrice),
+				BasePrice:  basePrice,
+				QuotePrice: quotePrice,
 			},
 		},
 	)
@@ -115,7 +114,7 @@ func (s *service) UpdateMarketPrice(
 
 func (s *service) ListMarkets() ([]ports.Market, error) {
 	res, err := s.operatorClient.ListMarkets(
-		context.Background(), &pboperator.ListMarketsRequest{},
+		context.Background(), &pb.ListMarketsRequest{},
 	)
 	if err != nil {
 		return nil, err
