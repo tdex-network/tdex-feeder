@@ -105,8 +105,8 @@ func (s *service) UpdateMarketPrice(
 				QuoteAsset: mkt.QuoteAsset(),
 			},
 			Price: &pbtypes.Price{
-				BasePrice:  float32(basePrice),
-				QuotePrice: float32(quotePrice),
+				BasePrice:  basePrice,
+				QuotePrice: quotePrice,
 			},
 		},
 	)
