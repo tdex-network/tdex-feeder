@@ -25,8 +25,8 @@ var (
 type service struct {
 	rpcAddress string
 
-	unlockerClient pb.WalletUnlockerClient
-	operatorClient pb.OperatorClient
+	unlockerClient pb.WalletUnlockerServiceClient
+	operatorClient pb.OperatorServiceClient
 }
 
 func NewGRPCClient(
@@ -42,8 +42,8 @@ func NewGRPCClient(
 		return nil, err
 	}
 
-	unlockerClient := pb.NewWalletUnlockerClient(unlockerConn)
-	operatorClient := pb.NewOperatorClient(operatorConn)
+	unlockerClient := pb.NewWalletUnlockerServiceClient(unlockerConn)
+	operatorClient := pb.NewOperatorServiceClient(operatorConn)
 
 	return &service{
 		rpcAddress:     addr,
@@ -68,8 +68,8 @@ func NewGRPCClientFromURL(url string) (ports.TdexClient, error) {
 		return nil, err
 	}
 
-	unlockerClient := pb.NewWalletUnlockerClient(unlockerConn)
-	operatorClient := pb.NewOperatorClient(operatorConn)
+	unlockerClient := pb.NewWalletUnlockerServiceClient(unlockerConn)
+	operatorClient := pb.NewOperatorServiceClient(operatorConn)
 
 	return &service{
 		rpcAddress:     addr,

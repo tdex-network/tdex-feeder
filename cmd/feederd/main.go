@@ -81,6 +81,17 @@ func main() {
 				)
 			}
 		}
+		isReady, err := target.IsReady()
+		if err != nil {
+			log.WithError(err).Fatalf(
+				"failed to list markets for target %s", t.RPCAddress,
+			)
+		}
+		if !isReady {
+			log.Fatalf(
+				"target %s must be unlocked or initialized", t.RPCAddress,
+			)
+		}
 		markets, err := target.ListMarkets()
 		if err != nil {
 			log.WithError(err).Fatalf(
