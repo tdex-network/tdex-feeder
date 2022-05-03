@@ -14,8 +14,8 @@ import (
 	"google.golang.org/grpc/credentials"
 	"gopkg.in/macaroon.v2"
 
-	pb "github.com/tdex-network/tdex-daemon/api-spec/protobuf/gen/go/tdex-daemon/v1"
-	pbtypes "github.com/tdex-network/tdex-daemon/api-spec/protobuf/gen/go/tdex/v1"
+	pb "github.com/tdex-network/tdex-daemon/api-spec/protobuf/gen/tdex-daemon/v1"
+	pbtypes "github.com/tdex-network/tdex-daemon/api-spec/protobuf/gen/tdex/v1"
 )
 
 var (
