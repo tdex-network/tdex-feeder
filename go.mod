@@ -8,7 +8,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/viper v1.10.1
 	github.com/stretchr/testify v1.7.0
-	github.com/tdex-network/tdex-daemon v0.8.11
+	github.com/tdex-network/tdex-daemon v0.8.12
 	github.com/tdex-network/tdex-daemon/pkg/macaroons v0.0.0-20220330150215-afd1e97f790e
 	google.golang.org/grpc v1.45.0
 	gopkg.in/macaroon.v2 v2.1.0
