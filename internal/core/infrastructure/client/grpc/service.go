@@ -12,6 +12,7 @@ import (
 	"github.com/tdex-network/tdex-feeder/internal/core/ports"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"gopkg.in/macaroon.v2"
 
 	pb "github.com/tdex-network/tdex-daemon/api-spec/protobuf/gen/tdex-daemon/v1"
@@ -151,7 +152,8 @@ func createGRPCConn(
 	// tls credentials
 	var tlsCreds credentials.TransportCredentials
 	if proto == "http" && len(certBytes) == 0 {
-		opts = append(opts, grpc.WithInsecure())
+		creds := insecure.NewCredentials()
+		opts = append(opts, grpc.WithTransportCredentials(creds))
 	} else if proto == "https" {
 		if len(certBytes) > 0 {
 			cert, err := x509.ParseCertificate(certBytes)
