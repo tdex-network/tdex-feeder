@@ -137,6 +137,18 @@ func createGRPCConn(
 ) (*grpc.ClientConn, error) {
 	opts := []grpc.DialOption{grpc.WithDefaultCallOptions(maxMsgRecvSize)}
 
+	// macaroons credentials
+	mac := &macaroon.Macaroon{}
+	if len(macBytes) > 0 {
+		if err := mac.UnmarshalBinary(macBytes); err != nil {
+			return nil, fmt.Errorf("could not parse macaroon: %s", err)
+		}
+		macCreds := macaroons.NewMacaroonCredential(mac, true)
+
+		opts = append(opts, grpc.WithPerRPCCredentials(macCreds))
+	}
+
+	// tls credentials
 	var tlsCreds credentials.TransportCredentials
 	if proto == "http" && len(certBytes) == 0 {
 		opts = append(opts, grpc.WithInsecure())
@@ -153,15 +165,6 @@ func createGRPCConn(
 			// Fetch the CA-signed certificate
 			tlsCreds = credentials.NewClientTLSFromCert(nil, "")
 		}
-
-		// macaroons credentials
-		mac := &macaroon.Macaroon{}
-		if err := mac.UnmarshalBinary(macBytes); err != nil {
-			return nil, fmt.Errorf("could not parse macaroon: %s", err)
-		}
-		macCreds := macaroons.NewMacaroonCredential(mac, true)
-
-		opts = append(opts, grpc.WithPerRPCCredentials(macCreds))
 		opts = append(opts, grpc.WithTransportCredentials(tlsCreds))
 	}
 
