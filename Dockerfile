@@ -1,26 +1,41 @@
-FROM golang:1.15.5-buster AS builder
+# first image used to build the sources
+FROM golang:1.19-buster AS builder
 
 ARG TARGETOS
 ARG TARGETARCH
 
-WORKDIR /tdex-feeder
-
-COPY go.mod .
-COPY go.sum .
-RUN go mod download
+WORKDIR /app
 
 COPY . .
+RUN go mod download
 
-RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o feederd-linux cmd/feederd/main.go
+RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o bin/feederd cmd/feederd/main.go
 
-WORKDIR /build
 
-RUN cp /tdex-feeder/feederd-linux .
+# Second image, running the tdexd executable
+FROM debian:buster-slim
 
-FROM debian:buster
+# $USER name, and data $DIR to be used in the `final` image
+ARG USER=feeder
+ARG DIR=/home/feeder
 
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates
 
-COPY --from=builder /build/ /
+# NOTE: Default GID == UID == 1000
+RUN adduser --disabled-password \
+            --home "$DIR/" \
+            --gecos "" \
+            "$USER"
+USER $USER
 
-CMD ["/feederd-linux"]
+COPY --from=builder /app/bin/* /usr/local/bin/
+
+# Prevents `VOLUME $DIR/.tdex-feeder/` being created as owned by `root`
+RUN mkdir -p "$DIR/.tdex-feeder/"
+
+# Expose volume containing all data
+VOLUME $DIR/.tdex-feeder/
+
+
+
+ENTRYPOINT [ "feederd" ]
