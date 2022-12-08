@@ -15,7 +15,7 @@ type Target struct {
 
 func (t Target) validate() error {
 	if url := t.TdexdconnectURL; url != "" {
-		_, _, _, err := tdexdconnect.Decode(url)
+		_, _, _, _, err := tdexdconnect.Decode(url)
 		return err
 	}
 

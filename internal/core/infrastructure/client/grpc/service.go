@@ -53,17 +53,17 @@ func NewGRPCClient(
 }
 
 func NewGRPCClientFromURL(url string) (ports.TdexClient, error) {
-	addr, tlsCert, macaroon, err := tdexdconnect.Decode(url)
+	addr, proto, tlsCert, macaroon, err := tdexdconnect.Decode(url)
 	if err != nil {
 		return nil, err
 	}
 
-	unlockerConn, err := createGRPCConn(addr, macaroon, tlsCert)
+	unlockerConn, err := createGRPCConn(addr, macaroon, tlsCert, proto)
 	if err != nil {
 		return nil, err
 	}
 
-	operatorConn, err := createGRPCConn(addr, macaroon, tlsCert)
+	operatorConn, err := createGRPCConn(addr, macaroon, tlsCert, proto)
 	if err != nil {
 		return nil, err
 	}
@@ -133,20 +133,26 @@ func (s *service) ListMarkets() ([]ports.Market, error) {
 
 func createGRPCConn(
 	daemonEndpoint string, macBytes, certBytes []byte,
+	proto string,
 ) (*grpc.ClientConn, error) {
 	opts := []grpc.DialOption{grpc.WithDefaultCallOptions(maxMsgRecvSize)}
 
-	if len(macBytes) <= 0 {
+	var tlsCreds credentials.TransportCredentials
+	if proto == "http" && len(certBytes) == 0 {
 		opts = append(opts, grpc.WithInsecure())
-	} else {
-		// TLS credentials
-		cert, err := x509.ParseCertificate(certBytes)
-		if err != nil {
-			return nil, fmt.Errorf("could not parse TLS certificate: %s", err)
+	} else if proto == "https" {
+		if len(certBytes) > 0 {
+			cert, err := x509.ParseCertificate(certBytes)
+			if err != nil {
+				return nil, fmt.Errorf("could not parse TLS certificate: %s", err)
+			}
+			cp := x509.NewCertPool()
+			cp.AddCert(cert)
+			tlsCreds = credentials.NewClientTLSFromCert(cp, "")
+		} else {
+			// Fetch the CA-signed certificate
+			tlsCreds = credentials.NewClientTLSFromCert(nil, "")
 		}
-		cp := x509.NewCertPool()
-		cp.AddCert(cert)
-		tlsCreds := credentials.NewClientTLSFromCert(cp, "")
 
 		// macaroons credentials
 		mac := &macaroon.Macaroon{}

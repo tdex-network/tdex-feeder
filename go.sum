@@ -540,6 +540,8 @@ github.com/tdex-network/tdex-daemon v0.8.12-rc.0.0.20220503122146-5f907890261c h
 github.com/tdex-network/tdex-daemon v0.8.12-rc.0.0.20220503122146-5f907890261c/go.mod h1:C8XbigI/pbFur5AKGESgI3JnUO76dRSA5y/mYzv7k04=
 github.com/tdex-network/tdex-daemon v0.8.12 h1:AvbIgcXz9CN3z4xzf3ASKI4pDB0AekjYhNB+j5U5KJs=
 github.com/tdex-network/tdex-daemon v0.8.12/go.mod h1:C8XbigI/pbFur5AKGESgI3JnUO76dRSA5y/mYzv7k04=
+github.com/tdex-network/tdex-daemon v0.8.20 h1:w3i5TOqjM88L4RKv9C5PkYR6pgLzRmybjuzLYw5Y1N8=
+github.com/tdex-network/tdex-daemon v0.8.20/go.mod h1:C8XbigI/pbFur5AKGESgI3JnUO76dRSA5y/mYzv7k04=
 github.com/tdex-network/tdex-daemon/pkg/explorer v0.0.0-20210322164638-77a31ea9e66d/go.mod h1:4gMUHFqbQCzBULCsmoyuvFKXX1Yr6a6r6qyhlTtR+KM=
 github.com/tdex-network/tdex-daemon/pkg/explorer v0.0.0-20211001103242-a11e4485705a/go.mod h1:0x7R122qN31xARZrTqLICscV2k3w1q85pTzyb3AjJco=
 github.com/tdex-network/tdex-daemon/pkg/macaroons v0.0.0-20210813140257-70d50a8b72a4/go.mod h1:JNwFSeCsjtNtzw4Eltr+sJVQT49d3GA6yGFpBg14WEE=
