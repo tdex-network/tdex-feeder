@@ -1,0 +1,15 @@
+version: v1
+managed:
+  enabled: true
+  go_package_prefix:
+    default: github.com/tdex-network/tdex-feeder/api-spec/protobuf/gen
+    except:
+      - buf.build/googleapis/googleapis
+plugins:
+  # Golang
+  - remote: buf.build/protocolbuffers/plugins/go
+    out: api-spec/protobuf/gen
+    opt: paths=source_relative
+  - remote: buf.build/grpc/plugins/go
+    out: api-spec/protobuf/gen
+    opt: paths=source_relative,require_unimplemented_servers=false

@@ -1,5 +1,11 @@
 .PHONY: build run clean cov fmt help vet test shorttest integrationtest
 
+## proto: compile proto stubs
+proto:
+	@echo "Compiling stubs..."
+	@buf generate buf.build/tdex-network/tdex-protobuf
+
+
 ## build: builds binary for all platforms
 build:
 	chmod u+x ./scripts/build
