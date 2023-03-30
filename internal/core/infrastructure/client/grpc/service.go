@@ -15,8 +15,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"gopkg.in/macaroon.v2"
 
-	pb "github.com/tdex-network/tdex-daemon/api-spec/protobuf/gen/tdex-daemon/v1"
-	pbtypes "github.com/tdex-network/tdex-daemon/api-spec/protobuf/gen/tdex/v1"
+	pb "github.com/tdex-network/tdex-feeder/api-spec/protobuf/gen/tdex-daemon/v2"
+	pbtypes "github.com/tdex-network/tdex-feeder/api-spec/protobuf/gen/tdex/v2"
 )
 
 var (
@@ -26,7 +26,7 @@ var (
 type service struct {
 	rpcAddress string
 
-	unlockerClient pb.WalletUnlockerServiceClient
+	unlockerClient pb.WalletServiceClient
 	operatorClient pb.OperatorServiceClient
 }
 
@@ -43,7 +43,7 @@ func NewGRPCClient(
 		return nil, err
 	}
 
-	unlockerClient := pb.NewWalletUnlockerServiceClient(unlockerConn)
+	unlockerClient := pb.NewWalletServiceClient(unlockerConn)
 	operatorClient := pb.NewOperatorServiceClient(operatorConn)
 
 	return &service{
@@ -69,7 +69,7 @@ func NewGRPCClientFromURL(url string) (ports.TdexClient, error) {
 		return nil, err
 	}
 
-	unlockerClient := pb.NewWalletUnlockerServiceClient(unlockerConn)
+	unlockerClient := pb.NewWalletServiceClient(unlockerConn)
 	operatorClient := pb.NewOperatorServiceClient(operatorConn)
 
 	return &service{
@@ -84,8 +84,8 @@ func (s *service) RPCAddress() string {
 }
 
 func (s *service) IsReady() (bool, error) {
-	res, err := s.unlockerClient.IsReady(
-		context.Background(), &pb.IsReadyRequest{},
+	res, err := s.unlockerClient.GetStatus(
+		context.Background(), &pb.GetStatusRequest{},
 	)
 	if err != nil {
 		return false, err
